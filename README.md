@@ -1,6 +1,6 @@
 # spiral-fMRI
 
-**Please note:** You need to install Pulseq interpreter on your system before running any Pulseq sequence.
+**Please note:** You need to install Pulseq interpreter on your system before running any Pulseq sequence. Visit their [GitHub page](http://pulseq.github.io/) for more information
 
 In **PRESTO_pulseq.py**:
 1. Change the system limits if you need to. We have tested our implementation with these limits:
