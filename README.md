@@ -2,8 +2,8 @@
 
 **Please note:** You need to install Pulseq interpreter on your system before running any Pulseq sequence.
 
-In **PRESTO_pulseq**:
-1. Change the system limits if you need to. 
+In **PRESTO_pulseq.py**:
+1. Change the system limits if you need to. We have tested our implementation with these limits:
     ```python
     gamma = 42576000  # in Hz/T  %Determined from Pulseq - do not change
 
@@ -23,3 +23,4 @@ In **PRESTO_pulseq**:
     ```
 3. Go to the MR room and play it!
 
+Check the [Wiki](https://github.com/imr-framework/spiral-fmri/wiki) for more information.
