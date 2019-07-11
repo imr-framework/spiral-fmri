@@ -4,16 +4,14 @@ Author: Marina Manso Jimeno
 Last Updated: 06/12/2019
 """
 """
-Import general methods and pypulseq methods
+Import general methods, pypulseq methods and functions
 """
 from itertools import compress
 from math import pi
-from cmath import exp, phase
-
+from cmath import exp
 
 import numpy as np
 import scipy.io as sio
-import matplotlib.pyplot as plt
 
 from pypulseq.Sequence.sequence import Sequence
 from pypulseq.make_adc import makeadc
@@ -21,52 +19,9 @@ from pypulseq.makearbitrary_grad import makearbitrary_grad
 from pypulseq.makearbitrary_rf import make_arbitrary_rf
 from pypulseq.opts import Opts
 
-"""
-Functions for RF and Gradient raster times interpolation
+from interpolation import rf_interpolate,grad_interpolate
+from g2k import g2k
 
-For RF:
-GE raster time = 4 micro seconds
-Siemens raster time = 1 micro second
-
-For Gradients:
-GE raster time = 4 micro seconds
-Siemens raster time = 10 micro seconds
-"""
-
-def rf_interpolate(rf_signal, rf_raster_time):
-    GE_rf_raster_time = 4e-6
-    T = len(rf_signal) * GE_rf_raster_time  # pulse duration
-    t_GE = np.linspace(0, T - GE_rf_raster_time, T / GE_rf_raster_time)
-    t_out = np.linspace(0, T - rf_raster_time, T / rf_raster_time)
-    rf_out = np.interp(t_out, t_GE, rf_signal.flatten())
-
-    return rf_out
-
-
-def grad_interpolate(grad_signal, grad_raster_time):
-    GE_grad_raster_time = 4e-6
-    T = len(grad_signal) * GE_grad_raster_time  # pulse duration
-    t_GE = np.linspace(0, T - GE_grad_raster_time, T / GE_grad_raster_time)
-    t_out = np.linspace(0, T - grad_raster_time, T / grad_raster_time)
-    grad_out = np.interp(t_out, t_GE, grad_signal.flatten())
-
-    return grad_out
-"""
-Function gradient to k-space
-"""
-
-def g2k(gx, gy):
-
-    g = []
-    for i in range(len(gx[0])):
-
-        g.append(complex(gx[0,i],gy[0,i]))
-    gts = 10e-6 # gradient sample duration
-
-    ktemp = np.cumsum(g)*gts # cycles/m
-    kx = np.real(ktemp)
-    ky = np.imag(ktemp)
-    return kx, ky
 
 """
 Testing mode
@@ -123,9 +78,8 @@ gy_ro_wav_orig = grad_interpolate(gy_ro_wav, seq.grad_raster_time).reshape((1, -
 gz_ro_wav_orig = grad_interpolate(gz_ro_wav, seq.grad_raster_time).reshape((1, -1))
 
 # ADC
-kwargs_for_adc = {"num_samples": max(gx_ro_wav.shape), "dwell": system.grad_raster_time}
+kwargs_for_adc = {"num_samples": max(gx_ro_wav_orig.shape), "dwell": system.grad_raster_time}
 adc = makeadc(kwargs_for_adc)
-
 
 """
 Slab-selective excitation (tip-down) + PRESTO spoiler gradients
@@ -197,6 +151,7 @@ rf_spoil_seed = 150  # % For 30 kz platters per frame and rf_spoil_seed=150, we 
 # loop over undersampled time frames
 dabon = 1
 daboff = 0
+ktraj_full = []
 for iframe in range(-ndisdaq + 1, nref + 1):#range(-ndisdaq + 1, nref + nt + 1):
     print(str(iframe + ndisdaq) + ' of ' + str(nt + ndisdaq + nref))
 
@@ -214,7 +169,7 @@ for iframe in range(-ndisdaq + 1, nref + 1):#range(-ndisdaq + 1, nref + nt + 1):
         dabmode = 'on'
         view = iframe
 
-    ktrajs = []
+    ktraj_frame =[]
     for iz in range(1, len(kz) + 1):
 
         # fat sat block
@@ -247,11 +202,17 @@ for iframe in range(-ndisdaq + 1, nref + 1):#range(-ndisdaq + 1, nref + nt + 1):
 
         # Rotate the spiral arm if necessary
         if phi != 0:
-            gx_ro_wav = gx_ro_wav_orig * exp(phi * 1j)
-            gy_ro_wav = gy_ro_wav_orig * exp(phi * 1j)
+            g = []
+            for i in range(len(gx_ro_wav_orig[0])):
+                g.append(complex(gx_ro_wav_orig[0, i], gy_ro_wav_orig[0, i]))
+                g[i] = g[i] * exp(phi * 1j)
+            gx_ro_wav = np.real(g)
+            gy_ro_wav = np.imag(g)
+
         else:
             gx_ro_wav = gx_ro_wav_orig
             gy_ro_wav = gy_ro_wav_orig
+
 
         kwargs_for_arbG = {'channel': 'x', 'system': system, 'waveform': gx_ro_wav}
         gx_ro = makearbitrary_grad(kwargs_for_arbG)
@@ -266,10 +227,9 @@ for iframe in range(-ndisdaq + 1, nref + 1):#range(-ndisdaq + 1, nref + nt + 1):
         seq.add_block(gx_ro, gy_ro, gz_ro, adc)
 
         # get the k-space trajectory
-        kx, ky = g2k(gx_ro.waveform, gy_ro.waveform)
+        kx, ky, ks_z = g2k(gx_ro.waveform, gy_ro.waveform, gz_ro.waveform)
 
-        ktrajs.append(np.array([kx, ky]))
-
+        ktraj_frame.append(np.array([kx, ky, ks_z]))
 
         # update rf phase (RF spoiling)
 
@@ -277,6 +237,8 @@ for iframe in range(-ndisdaq + 1, nref + 1):#range(-ndisdaq + 1, nref + nt + 1):
         rfphs = rfphs + (rf_spoil_seed / 180 * pi) * rf_spoil_seed_cnt  # rad
         rf_spoil_seed_cnt += 1
 
+
+    ktraj_full.append(ktraj_frame)
 """
 Plot the resulting sequence
 """
