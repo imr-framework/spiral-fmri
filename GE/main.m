@@ -126,7 +126,7 @@ seqTR = 16.7e-3;               % sequence TR (sec). See toppe.getTRtime()
 dur = 5*60;     % total duration of fMRI scan (sec)
 trVol = nz_samp*seqTR;         % time to acquire one under-sampled image volume (sec)
 if test
-	seq.nt = 100;
+	seq.nt = 30;
 else
 	seq.nt = 2*round(dur/trVol/2);      % number of (undersampled) time-frames
 end
