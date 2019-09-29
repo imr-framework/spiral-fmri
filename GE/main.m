@@ -245,13 +245,11 @@ if writeKspace
 	ksp.kx = single(ksp.kx);
 	ksp.ky = single(ksp.ky);
 	ksp.kz = single(ksp.kz);
+	fprintf('Writing ksp.mat...');
+	%save -v7.3 ksp ksp
+	save ksp ksp
+	fprintf('done\n');
 end
-fprintf('Writing ksp.mat...');
-%save -v7.3 ksp ksp
-save ksp ksp
-fprintf('done\n');
-
-save params seq
 
 %% create tar file
 system('mkdir -p tar');
