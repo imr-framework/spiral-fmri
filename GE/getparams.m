@@ -2,9 +2,14 @@ function seq = getparams
 % Get acquisition parameters for 3D B0 scan, and for 3D stack-of-spirals fMRI scan.
 %
 % In addition, write modules.txt.
+%
+% (I use the struct name 'seq' here but probably best to call it something else 
+% when calling this function to avoid conflict with Pulseq code!)
 
-%% Global parameters (commont to both B0 and fMRI sequence)
-seq.test = true;         % Create a sequence containing only a few time frames (for testing recon, etc)
+% local to this function
+test = true;         % Create a sequence containing only a few time frames (for testing recon, etc)
+
+%% Global parameters (common to both B0 and fMRI sequence)
 seq.writeKspace = false;   % Write k-space locations for entire scan to a (large) .mat file. Units: cycles/cm
 
 % system limit structs
@@ -46,47 +51,31 @@ seq.rf.dur = 1;                    % RF pulse duration (msec)
 seq.rf.nCyclesSpoil = 0;           % make it balanced initially -- gradient pre/rephasers will then be modified
 seq.rf.ftype = 'ls';               % least-squares SLR pulse (another good option for 3D imaging is 'min')
 
-% Create spoiler (PRESTO) gradients.
-% Will be placed on two axes for best (RF) spoiling.
-seq.nCyclesSpoil = 1;   % Gives near-optimal temporal SNR, and not so large (see one of my ISMRM abstracts, 2017 I think) 
-gspoil1 = toppe.utils.makecrusher(nCyclesSpoil, seq.dz, 0, seq.sys.maxSlew, seq.sys.maxGrad);
-gspoil2 = toppe.utils.makecrusher(2*nCyclesSpoil, seq.dz, 0, seq.sys.maxSlew, seq.sys.maxGrad);
+% Spoiler gradient sizes (cycles/voxel). Played on x and z axes.
+seq.fmri.nCyclesSpoil = 1;   % Gives near-optimal temporal SNR for PRESTO fMRI, and not so large (see one of my ISMRM abstracts, 2017 I think) 
+seq.b0.nCyclesSpoil = 1.5;   % SPGR spoiler gradient
 
-% create tipdown.mod
-rf = [0*gspoil2(:); zeros(2,1); rf(:); 0*gspoil1(:)];
-gx = [1*gspoil2(:); zeros(2,1); 0*gex(:);  -gspoil1(:)];
-gy = [0*gspoil2(:); zeros(2,1); 0*gex(:); 0*gspoil1(:)];
-gz = [1*gspoil2(:); zeros(2,1); gex(:);  -gspoil1(:)];
-rf = toppe.utils.makeGElength(rf);
-gx = toppe.utils.makeGElength(gx);
-gy = toppe.utils.makeGElength(gy);
-gz = toppe.utils.makeGElength(gz);
-toppe.writemod('rf', rf, 'gx', gx, 'gy', gy, 'gz', gz, 'ofname', 'tipdown.mod', ...
-               'desc', 'RF slab excitation with PRESTO gradients', 'system', seq.sysGE);  % NB! Pass 'sysGE' here, not 'sys'!
-
-%% Create fat saturation pulse
-% bw = 500 Hz. Frequency offset (-440 Hz) is set in scanloop.txt.
+% fat saturation pulse
 seq.fatsat.flip = 50;
-slThick = 1000;     % dummy value (determines slice-select gradient, but we won't use it). Just needs to be large to reduce dead time before+after rf pulse
+%slThick = 1000;     % dummy value (determines slice-select gradient, but we won't use it). Just needs to be large to reduce dead time before+after rf pulse
 seq.fatsat.tbw = 1.5;
 seq.fatsat.dur = 3;            % pulse duration (msec)
-toppe.utils.rf.makeslr(seq.fatsat.flip, slThick, seq.fatsat.tbw, seq.fatsat.dur, 0, ...
-                       'ftype', 'ls', 'ofname', 'fatsat.mod', 'system', seq.sysGE);
 
-%% Create scanloop.txt
-nz_samp = 30;                  % Sample this many kz points per time-frame (undersampling factor in kz is 54/30 = 1.8)
-seqTR = 16.7e-3;               % sequence TR (sec). See toppe.getTRtime()
-dur = 5*60;     % total duration of fMRI scan (sec)
-trVol = nz_samp*seqTR;         % time to acquire one under-sampled image volume (sec)
+%% fMRI sequence parameters
+
+seq.fmri.nz_samp = 30;             % Sample this many kz points per time-frame (undersampling factor in kz is 54/30 = 1.8)
+seq.fmri.TR = 16.7e-3;             % approximate sequence TR (sec). See toppe.getTRtime()
+seq.fmri.dur = 5*60;               % total duration of fMRI scan (sec)
+seq.fmri.trVol = nz_samp*seqTR;    % time to acquire one under-sampled image volume (sec)
 if test
-	seq.nt = 100;
+	seq.nt = 30;
 else
-	seq.nt = 2*round(dur/trVol/2);      % number of (undersampled) time-frames
+	seq.nt = 2*round(seq.fmri.dur/seq.fmri.trVol/2);      % number of (undersampled) time-frames
 end
 
 % fully sampled kz sampling pattern
 for ii = 1:seq.nz
-	kzFull(ii) = ((ii-1+0.5)-seq.nz/2)/(seq.nz/2);    % scaling is (-1 1)
+	seq.kzFull(ii) = ((ii-1+0.5)-seq.nz/2)/(seq.nz/2);    % scaling is (-1 1)
 end
 
 % undersampled kz sampling pattern
@@ -99,136 +88,21 @@ if 0
 else
 	% Cartesian variable-density kz undersampling
 	load zInd;
-	kzU = kzFull(logical(zInd));
+	seq.kzU = kzFull(logical(zInd));
 end
 
-ndisdaq = 10;
-seq.nref = 4*seq.nleafs;     % (number of fully sampled frames acquired at beginning) * (seq.nleafs)
+seq.fmri.ndisdaq = 2;        % number of (fully sampled) dummy TRs to reach steady state
+seq.fmri.nref    = 4;        % number of fully sampled frames acquired at beginning (for, e.g., GRAPPA calibration)
 
-seq.nframes = seq.nref + seq.nt;
+seq.fmri.nframes = seq.fmri.nref*seq.nleafs + seq.nt;
 
-rfphs = 0;              % radians
-rfphsLast = rfphs;
-daqphs = 0;
-rf_spoil_seed_cnt = 0;
-rf_spoil_seed = 150;  % For 30 kz platters per frame and rf_spoil_seed=150, ...
-                      % we have mod(nz_samp*rf_spoil_seed,360)=180 which is what we need for improved RF spoiling...
-                      % using our method in Magn Reson Med. 2016 Jun;75(6):2388-93. doi: 10.1002/mrm.25843.
+% For 30 kz platters per frame and rf_spoil_seed=150, ...
+% we have mod(nz_samp*rf_spoil_seed,360)=180 which is what we need for improved RF spoiling...
+% using our method in Magn Reson Med. 2016 Jun;75(6):2388-93. doi: 10.1002/mrm.25843.
+seq.fmri.rf_spoil_seed = 150;  
 
-% loop over (undersampled) time frames and fill in scanloop.txt,
-% and write k-space values to file
-if writeKspace
-	[rf,gx,gy] = toppe.readmod('readout.mod');  % one spiral leaf
-	[kx1,ky1] = toppe.utils.g2k([gx(:,1) gy(:,1)],1);
-	k1 = complex(kx1,ky1);  % single spiral 'prototype'
-	ndat = size(k1,1);
-	necho = 1;
-	ksp.kx = NaN*ones(ndat, seq.nz, necho, seq.nframes);   % to match the 'slice-echo-view' order of 'dat' array returned by toppe.utils.loadpfile
-	ksp.ky = ksp.kx;
-	ksp.kz = ksp.kx;
-end
-fprintf('Writing scanloop.txt for fMRI sequence\n');
-toppe.write2loop('setup');
-for iframe = (-ndisdaq+1):seq.nframes
-	if ~mod(iframe,10)
-		fprintf([repmat('\b',1,20) sprintf('%d of %d', iframe+ndisdaq, seq.nt+ndisdaq+seq.nref )]);
-	end
+return;
 
-	% Set kz sampling pattern for this frame.
-	if iframe < (seq.nref+1)
-		kz1 = kzFull;                % numel(kz) = seq.nz;
-	else
-		kz1 = kzU;                   % numel(kz) = nz_samp;
-	end
-
-	% set 'view' data storage index
-	if iframe < 1 
-		dabmode = 'off';
-		view  = 1;
-	else
-		dabmode = 'on';
-		view = iframe;
-	end
-
-	for iz = 1:numel(kz1)
-   	% fat sat
-   	% toppe.write2loop('fatsat.mod', 'RFphase', rfphs, 'Gamplitude', [0 0 0]');
-
-   	% rf excitation (and PRESTO gradients)
-   	toppe.write2loop('tipdown.mod', 'RFphase', rfphs, 'Gamplitude', [1 0 1]');
-
-   	% readout. Data is stored in 'slice', 'echo', and 'view' indeces.
-		slice = iz;
-		view = max(iframe,1);
-		if iframe < (seq.nref+1)
-			ileaf = mod(mod(iframe,seq.nleafs) + iz,seq.nleafs) + 1;   % rotate leaf every frame and every kz platter
-		else
-			ileaf = mod(iz,seq.nleafs) + 1;                        % rotate leaf every kz platter (i.e., same undersampling pattern for every frame)
-		end
-		%ileaf = mod(mod(iframe,seq.nleafs) + iz,seq.nleafs) + 1;   % rotate leaf every frame and every kz platter
-		phi = 2*pi*(ileaf-1)/seq.nleafs;                          % leaf rotation angle (radians)
-		echo = 1;
-   	toppe.write2loop('readout.mod', 'DAQphase', rfphsLast, 'slice', slice, 'echo', echo, ...
-			'view', view, 'Gamplitude', [1 1 kz1(iz)]', 'dabmode', dabmode, 'rot', phi);
-
-	   % update rf phase (RF spoiling)
-		rfphsLast = rfphs;
-		rfphs = rfphs + (rf_spoil_seed/180 * pi)*rf_spoil_seed_cnt ;  % radians
-		rf_spoil_seed_cnt = rf_spoil_seed_cnt + 1;
-
-		% kspace info for this TR
-		if strcmp(dabmode, "on") & writeKspace
-			k1tmp = k1.*exp(1i*phi)*seq.fov/seq.n;         % convert from cycles/cm to cycles/sample
-			ksp.kx(:,slice,echo,view) = real(k1tmp);
-			ksp.ky(:,slice,echo,view) = imag(k1tmp);
-			ksp.kz(:,slice,echo,view) = kz1(iz)/2;         % cycles/sample
-		end
-
-		ksp.kinfo(slice,echo,view).ileaf = ileaf;     % might come in handy
-		ksp.kinfo(slice,echo,view).rot = phi;         % this too
-	end
-end
-fprintf('\n');
-toppe.write2loop('finish');
-
-%% Save k-space trajectory and other sequence info 
-%[rf,gx,gy,gz,desc,paramsint16,paramsfloat] = toppe.readmod('readout.mod');
-%[ksp.kx ksp.ky] = toppe.utils.g2k([gx(:) gy(:)], seq.nleafs);
-if writeKspace
-	ksp.kx = single(ksp.kx);
-	ksp.ky = single(ksp.ky);
-	ksp.kz = single(ksp.kz);
-end
-fprintf('Writing ksp.mat...');
-%save -v7.3 ksp ksp
-save ksp ksp
-fprintf('done\n');
-
-save params seq
-
-%% create tar file
-system('mkdir -p tar');
-cd tar
-system('tar cf scan,fmri.tar ../main.m ../params.mat ../ksp.mat ../*.mod ../modules.txt ../scanloop.txt');
-cd ..
-
-%% display sequence
-%toppe.playseq(2, 'tpause', 0.1);
-
-%% convert to Pulseq
-if 0
-% addpath ~/gitlab/toppe/pulseq/
-cd tar
-ge2seq('scan.tar');
-seq = mr.Sequence();
-seq.read('out.seq');
-seq.plot_sg('TimeRange', [10 10.05]);
-cd ..
-end
-
-fprintf('Scan time for fMRI sequence: %.2f min\n', toppe.getscantime/60);
-
-%keyboard
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
