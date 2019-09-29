@@ -20,8 +20,8 @@ TODO
 ## MAIN SCRIPT
 
 ```matlab
->> p = getparams;
->> main(p);
+>> params = getparams;
+>> main(params);
 ```
 
 This creates two sequences:
@@ -29,7 +29,7 @@ This creates two sequences:
   * Use to obtain B0 map and coil sensitivity maps
 * ./tar/scan,fmri.tar
 
-Untar each file (in turn) in /usr/g/bin/ on scanner hsot and scan with toppev3.e.
+Untar each file (in turn) in /usr/g/bin/ on scanner host and scan with toppev3.e.
 
 ## LOW-RESOLUTION SPOILED 3D GRE (SPGR/FLASH) 
 
@@ -54,8 +54,9 @@ This trick relies on using the same k-space trajectory for each (undersampled) t
 #### Image reconstruction
 ```matlab
 >> ksp = getspiralkspace;
->> params = getAcParams('fmri'); 
->> ims = recon(d,ksp,params.fov,params.imSize);
+>> params = getparams;
+>> imSize = [params.n params.n params.nz];
+>> ims = recon(d, ksp, params.fov, imSize);
 ```
 
 

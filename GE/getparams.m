@@ -40,9 +40,6 @@ seq.fovz = 18;                  % fov along z (cm)
 seq.dz = seq.fovz/seq.nz;       % reconstructed slice thickness (cm)
 seq.dx = seq.fov/seq.n;         % in-plane voxel dimension (cm)
 
-% spiral readout
-seq.nleafs = 3;                 % Number of spiral rotations (leafs) for full k-space sampling.
-
 % Slab-selective excitation
 seq.rf.flip = 10;                  % excitation angle (degrees)
 seq.rf.slabThick = 0.8*seq.fovz;   % cm
@@ -50,10 +47,6 @@ seq.rf.tbw = 8;                    % time-bandwidth product of SLR pulse
 seq.rf.dur = 1;                    % RF pulse duration (msec)
 seq.rf.nCyclesSpoil = 0;           % make it balanced initially -- gradient pre/rephasers will then be modified
 seq.rf.ftype = 'ls';               % least-squares SLR pulse (another good option for 3D imaging is 'min')
-
-% Spoiler gradient sizes (cycles/voxel). Played on x and z axes.
-seq.fmri.nCyclesSpoil = 1;   % Gives near-optimal temporal SNR for PRESTO fMRI, and not so large (see one of my ISMRM abstracts, 2017 I think) 
-seq.b0.nCyclesSpoil = 1.5;   % SPGR spoiler gradient
 
 % fat saturation pulse
 seq.fatsat.flip = 50;
@@ -63,19 +56,24 @@ seq.fatsat.dur = 3;            % pulse duration (msec)
 
 %% fMRI sequence parameters
 
+seq.fmri.nLeafs = 3;                 % Number of spiral rotations (leafs) for full k-space sampling.
+
+% Spoiler gradient size (cycles/voxel). Played on x and z axes.
+seq.fmri.nCyclesSpoil = 1;   % Gives near-optimal temporal SNR for PRESTO fMRI, and not so large (see one of my ISMRM abstracts, 2017 I think) 
+
 seq.fmri.nz_samp = 30;             % Sample this many kz points per time-frame (undersampling factor in kz is 54/30 = 1.8)
 seq.fmri.TR = 16.7e-3;             % approximate sequence TR (sec). See toppe.getTRtime()
 seq.fmri.dur = 5*60;               % total duration of fMRI scan (sec)
-seq.fmri.trVol = nz_samp*seqTR;    % time to acquire one under-sampled image volume (sec)
+seq.fmri.trVol = seq.fmri.nz_samp*seq.fmri.TR;    % time to acquire one under-sampled image volume (sec)
 if test
-	seq.nt = 30;
+	seq.fmri.nt = 30;
 else
-	seq.nt = 2*round(seq.fmri.dur/seq.fmri.trVol/2);      % number of (undersampled) time-frames
+	seq.fmri.nt = 2*round(seq.fmri.dur/seq.fmri.trVol/2);      % number of (undersampled) time-frames
 end
 
 % fully sampled kz sampling pattern
 for ii = 1:seq.nz
-	seq.kzFull(ii) = ((ii-1+0.5)-seq.nz/2)/(seq.nz/2);    % scaling is (-1 1)
+	seq.fmri.kzFull(ii) = ((ii-1+0.5)-seq.nz/2)/(seq.nz/2);    % scaling is (-1 1)
 end
 
 % undersampled kz sampling pattern
@@ -84,17 +82,17 @@ if 0
 	Rz = seq.nz/nz_samp;               % kz acceleration factor
 	kz = vardenskz(seq.nz,Rz,3.3);    % Fully sampled center with quadratically increasing FOV outside center. Last argument is FOV(kz=0)/FOV(kzmax). 
 	a_gz_max = abs((0.5-seq.nz/2)/(seq.nz/2));
-	kzU = kz*a_gz_max;     % scaling is (-1 1)
+	seq.fmri.kzU = kz*a_gz_max;     % scaling is (-1 1)
 else
 	% Cartesian variable-density kz undersampling
 	load zInd;
-	seq.kzU = kzFull(logical(zInd));
+	seq.fmri.kzU = seq.fmri.kzFull(logical(zInd));
 end
 
 seq.fmri.ndisdaq = 2;        % number of (fully sampled) dummy TRs to reach steady state
 seq.fmri.nref    = 4;        % number of fully sampled frames acquired at beginning (for, e.g., GRAPPA calibration)
 
-seq.fmri.nframes = seq.fmri.nref*seq.nleafs + seq.nt;
+seq.fmri.nframes = seq.fmri.nref*seq.fmri.nLeafs + seq.fmri.nt;
 
 % For 30 kz platters per frame and rf_spoil_seed=150, ...
 % we have mod(nz_samp*rf_spoil_seed,360)=180 which is what we need for improved RF spoiling...
@@ -103,6 +101,8 @@ seq.fmri.rf_spoil_seed = 150;
 
 return;
 
+
+seq.b0.nCyclesSpoil = 1.5;   % SPGR spoiler gradient
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
