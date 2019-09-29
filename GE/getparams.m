@@ -1,26 +1,21 @@
-% Create stack-of-spirals PRESTO fMRI sequence for TOPPE.
-% Also create matched 3D spin-warp B0 sequence (also used for sensitivity map estimation)
+function seq = getparams
+% Get acquisition parameters for 3D B0 scan, and for 3D stack-of-spirals fMRI scan.
+%
+% In addition, write modules.txt.
 
-test = true;         % Create a sequence containing only a few time frames (for testing recon, etc)
-writeKspace = false;   % Write k-space locations for entire scan to a (large) .mat file. Units: cycles/cm
+%% Global parameters (commont to both B0 and fMRI sequence)
+seq.test = true;         % Create a sequence containing only a few time frames (for testing recon, etc)
+seq.writeKspace = false;   % Write k-space locations for entire scan to a (large) .mat file. Units: cycles/cm
 
-%% Set path to toppe Matlab library on Github (edit as needed)
-% addpath ~/github/toppe/
-
-%% set system limit structs
+% system limit structs
 % NB! If passing 'sys' to writemod.m, 'maxGrad' MUST match the physical system limit -- since gradients are scaled relative to this.
 % 'maxSlew' can always be a design choice, i.e., it can be at or below the physical system limit.
-% Here we will therefore use 'sys' when designing waveforms, and 'sysGE' when writing them to .mod files with writemod.m.
+% Here we will therefore use 'sys' when DESIGNING waveforms, and 'sysGE' when WRITING them to .mod files with writemod.m.
 mxs = 10.0;    % max slew [G/cm/msec]. Go easy to minimize PNS.
 seq.sys = toppe.systemspecs('maxSlew', mxs, 'slewUnit', 'Gauss/cm/ms', 'maxGrad', 3.1, 'gradUnit', 'Gauss/cm');  % used in design of waveforms
 seq.sysGE = toppe.systemspecs('maxSlew', mxs, 'slewUnit', 'Gauss/cm/ms', 'maxGrad', 5, 'gradUnit', 'Gauss/cm');  % needed in writemod() calls only 
 
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% First create stack-of-spirals fMRI sequence                
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%% Create modules.txt
+% Create modules.txt (common to both B0 and fMRI sequence)
 % Entries are tab-separated.
 modFileText = ['' ...
 'Total number of unique cores\n' ...
@@ -32,70 +27,28 @@ fid = fopen('modules.txt', 'wt');
 fprintf(fid, modFileText);
 fclose(fid);
 
-%% Create (balanced) stack-of-spirals readout leaf. Isotropic resolution.
+% FOV and resolution
 seq.n = 72;                     % in-plane matrix size of reconstructed image
 seq.fov = 24;                   % in-plane fov (cm)
-seq.nz = 54;                    % number of reconstructed pixels along z. (Excitation is 14 cm, readout FOV in z is 54*3.33mm = 180mm)
+seq.nz = 54;                    % number of reconstructed pixels along z
 seq.fovz = 18;                  % fov along z (cm)
-seq.nleafs = 3;                 % Number of spiral rotations (leafs) for full k-space sampling.
-
-if 0
-	% IV
-	seq.n = 110;
-	seq.fov = 22;
-	seq.nz = 25; 
-	seq.fovz = 50;
-	seq.nleafs = 3;
-end
-
 seq.dz = seq.fovz/seq.nz;       % reconstructed slice thickness (cm)
 seq.dx = seq.fov/seq.n;         % in-plane voxel dimension (cm)
 
-% design spiral
-rmax = seq.n/(2*seq.fov);           % max k-space radius
-[~,g] = toppe.utils.spiral.mintgrad.vds(0.99*seq.sys.maxSlew*1e3, 0.99*seq.sys.maxGrad, seq.sys.raster, seq.nleafs, seq.fov, 0, 0, rmax);   % vds returns complex k, g
-g = [0; 0; g(:)];           % add a couple of zeroes to make sure k=0 is sampled
+% spiral readout
+seq.nleafs = 3;                 % Number of spiral rotations (leafs) for full k-space sampling.
 
-% make balanced and same length
-gx = toppe.utils.makebalanced(real(g(:)), 'maxSlew', seq.sys.maxSlew/sqrt(2), 'maxGrad', seq.sys.maxGrad);
-gy = toppe.utils.makebalanced(imag(g(:)), 'maxSlew', seq.sys.maxSlew/sqrt(2), 'maxGrad', seq.sys.maxGrad);
-n = max(length(gx), length(gy));
-gx = [gx; zeros(n-length(gx), 1)];
-gy = [gy; zeros(n-length(gy), 1)];
-
-% make it spiral-in
-gx = flipud(gx);
-gy = flipud(gy);
-
-% add partition (kz) encoding trapezoids
-gzamp = (1/seq.sys.raster)/(seq.sys.gamma*seq.fovz);     % Gauss/cm
-zarea = gzamp*seq.nz*seq.sys.raster;                 % Gauss/cm*sec
-gpe = -toppe.utils.trapwave2(zarea/2, seq.sys.maxGrad, seq.sys.maxSlew, seq.sys.raster*1e3);
-gx1 = [0*gpe(:); zeros(2,1);   gx(:); 0*gpe(:)];
-gy1 = [0*gpe(:); zeros(2,1);   gy(:); 0*gpe(:)];
-gz1 = [  gpe(:); zeros(2,1); 0*gx(:);  -gpe(:)];
-
-% write to .mod file
-gx1 = toppe.utils.makeGElength(gx1);
-gy1 = toppe.utils.makeGElength(gy1);
-gz1 = toppe.utils.makeGElength(gz1);
-toppe.writemod('gx', gx1, 'gy', gy1, 'gz', gz1, 'ofname', 'readout.mod', ...
-               'desc', 'stack-of-spirals readout module', 'system', seq.sysGE);
-
-%% Create slab-selective excitation (tipdown.mod). Include (PRESTO) spoiler gradients.
-
+% Slab-selective excitation
 seq.rf.flip = 10;                  % excitation angle (degrees)
-seq.rf.slabThick = 14;             % cm
+seq.rf.slabThick = 0.8*seq.fovz;   % cm
 seq.rf.tbw = 8;                    % time-bandwidth product of SLR pulse 
 seq.rf.dur = 1;                    % RF pulse duration (msec)
-seq.rf.ncyclesspoil = 0;           % number of cycles of spoiler phase across voxel dimension (applied along x and z)
+seq.rf.nCyclesSpoil = 0;           % make it balanced initially -- gradient pre/rephasers will then be modified
 seq.rf.ftype = 'ls';               % least-squares SLR pulse (another good option for 3D imaging is 'min')
-[rf,gex] = toppe.utils.rf.makeslr(seq.rf.flip, seq.rf.slabThick, seq.rf.tbw, seq.rf.dur, seq.rf.ncyclesspoil, ...
-                       'ftype', seq.rf.ftype, 'system', seq.sys, 'writeModFile', false);
 
 % Create spoiler (PRESTO) gradients.
 % Will be placed on two axes for best (RF) spoiling.
-nCyclesSpoil = 1;   % Gives near-optimal temporal SNR, and not so large (see one of my ISMRM abstracts, 2017 I think) 
+seq.nCyclesSpoil = 1;   % Gives near-optimal temporal SNR, and not so large (see one of my ISMRM abstracts, 2017 I think) 
 gspoil1 = toppe.utils.makecrusher(nCyclesSpoil, seq.dz, 0, seq.sys.maxSlew, seq.sys.maxGrad);
 gspoil2 = toppe.utils.makecrusher(2*nCyclesSpoil, seq.dz, 0, seq.sys.maxSlew, seq.sys.maxGrad);
 
