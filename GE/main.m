@@ -1,59 +1,16 @@
+function main(seq)
 % Create stack-of-spirals PRESTO fMRI sequence for TOPPE.
 % Also create matched 3D spin-warp B0 sequence (also used for sensitivity map estimation)
-
-test = true;         % Create a sequence containing only a few time frames (for testing recon, etc)
-writeKspace = false;   % Write k-space locations for entire scan to a (large) .mat file. Units: cycles/cm
-
-%% Set path to toppe Matlab library on Github (edit as needed)
-% addpath ~/github/toppe/
-
-%% set system limit structs
-% NB! If passing 'sys' to writemod.m, 'maxGrad' MUST match the physical system limit -- since gradients are scaled relative to this.
-% 'maxSlew' can always be a design choice, i.e., it can be at or below the physical system limit.
-% Here we will therefore use 'sys' when designing waveforms, and 'sysGE' when writing them to .mod files with writemod.m.
-mxs = 10.0;    % max slew [G/cm/msec]. Go easy to minimize PNS.
-seq.sys = toppe.systemspecs('maxSlew', mxs, 'slewUnit', 'Gauss/cm/ms', 'maxGrad', 3.1, 'gradUnit', 'Gauss/cm');  % used in design of waveforms
-seq.sysGE = toppe.systemspecs('maxSlew', mxs, 'slewUnit', 'Gauss/cm/ms', 'maxGrad', 5, 'gradUnit', 'Gauss/cm');  % needed in writemod() calls only 
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% First create stack-of-spirals fMRI sequence                
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%% Create modules.txt
-% Entries are tab-separated.
-modFileText = ['' ...
-'Total number of unique cores\n' ...
-'2\n' ...
-'fname	duration(us)	hasRF?	hasDAQ?\n' ...
-'readout.mod	0	0	1\n' ...
-'tipdown.mod	0	1	0' ];
-fid = fopen('modules.txt', 'wt');
-fprintf(fid, modFileText);
-fclose(fid);
-
-%% Create (balanced) stack-of-spirals readout leaf. Isotropic resolution.
-seq.n = 72;                     % in-plane matrix size of reconstructed image
-seq.fov = 24;                   % in-plane fov (cm)
-seq.nz = 54;                    % number of reconstructed pixels along z. (Excitation is 14 cm, readout FOV in z is 54*3.33mm = 180mm)
-seq.fovz = 18;                  % fov along z (cm)
-seq.nleafs = 3;                 % Number of spiral rotations (leafs) for full k-space sampling.
-
-if 0
-	% IV
-	seq.n = 110;
-	seq.fov = 22;
-	seq.nz = 25; 
-	seq.fovz = 50;
-	seq.nleafs = 3;
-end
-
-seq.dz = seq.fovz/seq.nz;       % reconstructed slice thickness (cm)
-seq.dx = seq.fov/seq.n;         % in-plane voxel dimension (cm)
-
+%% Create balanced stack-of-spirals readout leaf (readout.mod). Isotropic resolution.
 % design spiral
 rmax = seq.n/(2*seq.fov);           % max k-space radius
-[~,g] = toppe.utils.spiral.mintgrad.vds(0.99*seq.sys.maxSlew*1e3, 0.99*seq.sys.maxGrad, seq.sys.raster, seq.nleafs, seq.fov, 0, 0, rmax);   % vds returns complex k, g
+[~,g] = toppe.utils.spiral.mintgrad.vds(0.99*seq.sys.maxSlew*1e3, 0.99*seq.sys.maxGrad, seq.sys.raster, seq.fmri.nLeafs, seq.fov, 0, 0, rmax);   % vds returns complex k, g
 g = [0; 0; g(:)];           % add a couple of zeroes to make sure k=0 is sampled
 
 % make balanced and same length
@@ -82,22 +39,17 @@ gz1 = toppe.utils.makeGElength(gz1);
 toppe.writemod('gx', gx1, 'gy', gy1, 'gz', gz1, 'ofname', 'readout.mod', ...
                'desc', 'stack-of-spirals readout module', 'system', seq.sysGE);
 
+
 %% Create slab-selective excitation (tipdown.mod). Include (PRESTO) spoiler gradients.
 
-seq.rf.flip = 10;                  % excitation angle (degrees)
-seq.rf.slabThick = 14;             % cm
-seq.rf.tbw = 8;                    % time-bandwidth product of SLR pulse 
-seq.rf.dur = 1;                    % RF pulse duration (msec)
-seq.rf.ncyclesspoil = 0;           % number of cycles of spoiler phase across voxel dimension (applied along x and z)
-seq.rf.ftype = 'ls';               % least-squares SLR pulse (another good option for 3D imaging is 'min')
-[rf,gex] = toppe.utils.rf.makeslr(seq.rf.flip, seq.rf.slabThick, seq.rf.tbw, seq.rf.dur, seq.rf.ncyclesspoil, ...
+nCyclesSpoil = 0;       % make it balanced initially -- gradient pre/rephasers will then be modified
+[rf,gex] = toppe.utils.rf.makeslr(seq.rf.flip, seq.rf.slabThick, seq.rf.tbw, seq.rf.dur, nCyclesSpoil, ...
                        'ftype', seq.rf.ftype, 'system', seq.sys, 'writeModFile', false);
 
 % Create spoiler (PRESTO) gradients.
 % Will be placed on two axes for best (RF) spoiling.
-nCyclesSpoil = 1;   % Gives near-optimal temporal SNR, and not so large (see one of my ISMRM abstracts, 2017 I think) 
-gspoil1 = toppe.utils.makecrusher(nCyclesSpoil, seq.dz, 0, seq.sys.maxSlew, seq.sys.maxGrad);
-gspoil2 = toppe.utils.makecrusher(2*nCyclesSpoil, seq.dz, 0, seq.sys.maxSlew, seq.sys.maxGrad);
+gspoil1 = toppe.utils.makecrusher(seq.fmri.nCyclesSpoil, seq.dz, 0, seq.sys.maxSlew, seq.sys.maxGrad);
+gspoil2 = toppe.utils.makecrusher(2*seq.fmri.nCyclesSpoil, seq.dz, 0, seq.sys.maxSlew, seq.sys.maxGrad);
 
 % create tipdown.mod
 rf = [0*gspoil2(:); zeros(2,1); rf(:); 0*gspoil1(:)];
@@ -110,6 +62,8 @@ gy = toppe.utils.makeGElength(gy);
 gz = toppe.utils.makeGElength(gz);
 toppe.writemod('rf', rf, 'gx', gx, 'gy', gy, 'gz', gz, 'ofname', 'tipdown.mod', ...
                'desc', 'RF slab excitation with PRESTO gradients', 'system', seq.sysGE);  % NB! Pass 'sysGE' here, not 'sys'!
+
+return;
 
 %% Create fat saturation pulse
 % bw = 500 Hz. Frequency offset (-440 Hz) is set in scanloop.txt.
@@ -148,9 +102,6 @@ else
 	load zInd;
 	kzU = kzFull(logical(zInd));
 end
-
-ndisdaq = 10;
-seq.nref = 4*seq.nleafs;     % (number of fully sampled frames acquired at beginning) * (seq.nleafs)
 
 seq.nframes = seq.nref + seq.nt;
 

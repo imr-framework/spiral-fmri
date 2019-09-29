@@ -16,7 +16,7 @@ seq.writeKspace = false;   % Write k-space locations for entire scan to a (large
 % NB! If passing 'sys' to writemod.m, 'maxGrad' MUST match the physical system limit -- since gradients are scaled relative to this.
 % 'maxSlew' can always be a design choice, i.e., it can be at or below the physical system limit.
 % Here we will therefore use 'sys' when DESIGNING waveforms, and 'sysGE' when WRITING them to .mod files with writemod.m.
-mxs = 10.0;    % max slew [G/cm/msec]. Go easy to minimize PNS.
+mxs = 13.0;    % max slew [G/cm/msec]. Go easy to minimize PNS.
 seq.sys = toppe.systemspecs('maxSlew', mxs, 'slewUnit', 'Gauss/cm/ms', 'maxGrad', 3.1, 'gradUnit', 'Gauss/cm');  % used in design of waveforms
 seq.sysGE = toppe.systemspecs('maxSlew', mxs, 'slewUnit', 'Gauss/cm/ms', 'maxGrad', 5, 'gradUnit', 'Gauss/cm');  % needed in writemod() calls only 
 
@@ -45,7 +45,6 @@ seq.rf.flip = 10;                  % excitation angle (degrees)
 seq.rf.slabThick = 0.8*seq.fovz;   % cm
 seq.rf.tbw = 8;                    % time-bandwidth product of SLR pulse 
 seq.rf.dur = 1;                    % RF pulse duration (msec)
-seq.rf.nCyclesSpoil = 0;           % make it balanced initially -- gradient pre/rephasers will then be modified
 seq.rf.ftype = 'ls';               % least-squares SLR pulse (another good option for 3D imaging is 'min')
 
 % fat saturation pulse
@@ -56,11 +55,12 @@ seq.fatsat.dur = 3;            % pulse duration (msec)
 
 %% fMRI sequence parameters
 
-seq.fmri.nLeafs = 3;                 % Number of spiral rotations (leafs) for full k-space sampling.
 
 % Spoiler gradient size (cycles/voxel). Played on x and z axes.
-seq.fmri.nCyclesSpoil = 1;   % Gives near-optimal temporal SNR for PRESTO fMRI, and not so large (see one of my ISMRM abstracts, 2017 I think) 
+% Value of about 1.0-1.5 Gives near-optimal temporal SNR for PRESTO fMRI (see one of my ISMRM abstracts, 2017 I think) 
+seq.fmri.nCyclesSpoil = 1;   
 
+seq.fmri.nLeafs = 3;               % Number of spiral rotations (leafs) for full k-space sampling.
 seq.fmri.nz_samp = 30;             % Sample this many kz points per time-frame (undersampling factor in kz is 54/30 = 1.8)
 seq.fmri.TR = 16.7e-3;             % approximate sequence TR (sec). See toppe.getTRtime()
 seq.fmri.dur = 5*60;               % total duration of fMRI scan (sec)
@@ -92,7 +92,7 @@ end
 seq.fmri.ndisdaq = 2;        % number of (fully sampled) dummy TRs to reach steady state
 seq.fmri.nref    = 4;        % number of fully sampled frames acquired at beginning (for, e.g., GRAPPA calibration)
 
-seq.fmri.nframes = seq.fmri.nref*seq.fmri.nLeafs + seq.fmri.nt;
+seq.fmri.nframes = seq.fmri.nref*seq.fmri.nLeafs + seq.fmri.nt; % total number of frames
 
 % For 30 kz platters per frame and rf_spoil_seed=150, ...
 % we have mod(nz_samp*rf_spoil_seed,360)=180 which is what we need for improved RF spoiling...
