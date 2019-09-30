@@ -10,7 +10,7 @@ function seq = getparams
 test = true;         % Create a sequence containing only a few time frames (for testing recon, etc)
 
 %% Global parameters (common to both B0 and fMRI sequence)
-seq.writeKspace = false;   % Write k-space locations for entire scan to a (large) .mat file. Units: cycles/cm
+seq.fmri.writeKspace = false;   % Write k-space locations for entire scan to a (large) .mat file. Units: cycles/cm
 
 % system limit structs
 % NB! If passing 'sys' to writemod.m, 'maxGrad' MUST match the physical system limit -- since gradients are scaled relative to this.

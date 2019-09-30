@@ -75,51 +75,16 @@ gz1 = toppe.utils.makeGElength(gz1);
 toppe.writemod('gx', gx1, 'gy', gy1, 'gz', gz1, 'ofname', 'readout.mod', ...
                'desc', 'stack-of-spirals readout module', 'system', seq.sysGE);
 
-
-return;
-
 %% Create scanloop.txt
-nz_samp = 30;                  % Sample this many kz points per time-frame (undersampling factor in kz is 54/30 = 1.8)
-seqTR = 16.7e-3;               % sequence TR (sec). See toppe.getTRtime()
-dur = 5*60;     % total duration of fMRI scan (sec)
-trVol = nz_samp*seqTR;         % time to acquire one under-sampled image volume (sec)
-if test
-	seq.nt = 30;
-else
-	seq.nt = 2*round(dur/trVol/2);      % number of (undersampled) time-frames
-end
-
-% fully sampled kz sampling pattern
-for ii = 1:seq.nz
-	kzFull(ii) = ((ii-1+0.5)-seq.nz/2)/(seq.nz/2);    % scaling is (-1 1)
-end
-
-% undersampled kz sampling pattern
-if 0
-	% Variable-density (non-Cartesian) kz undersampling. May be useful later.
-	Rz = seq.nz/nz_samp;               % kz acceleration factor
-	kz = vardenskz(seq.nz,Rz,3.3);    % Fully sampled center with quadratically increasing FOV outside center. Last argument is FOV(kz=0)/FOV(kzmax). 
-	a_gz_max = abs((0.5-seq.nz/2)/(seq.nz/2));
-	kzU = kz*a_gz_max;     % scaling is (-1 1)
-else
-	% Cartesian variable-density kz undersampling
-	load zInd;
-	kzU = kzFull(logical(zInd));
-end
-
-seq.nframes = seq.nref + seq.nt;
 
 rfphs = 0;              % radians
 rfphsLast = rfphs;
 daqphs = 0;
 rf_spoil_seed_cnt = 0;
-rf_spoil_seed = 150;  % For 30 kz platters per frame and rf_spoil_seed=150, ...
-                      % we have mod(nz_samp*rf_spoil_seed,360)=180 which is what we need for improved RF spoiling...
-                      % using our method in Magn Reson Med. 2016 Jun;75(6):2388-93. doi: 10.1002/mrm.25843.
 
 % loop over (undersampled) time frames and fill in scanloop.txt,
 % and write k-space values to file
-if writeKspace
+if seq.fmri.writeKspace
 	[rf,gx,gy] = toppe.readmod('readout.mod');  % one spiral leaf
 	[kx1,ky1] = toppe.utils.g2k([gx(:,1) gy(:,1)],1);
 	k1 = complex(kx1,ky1);  % single spiral 'prototype'
