@@ -1,7 +1,7 @@
 """
 PRESTO stack of spirals pulseq version
 Author: Marina Manso Jimeno
-Last Updated: 06/12/2019
+Last Updated: 09/30/2019
 """
 """
 Import general methods, pypulseq methods and functions
@@ -14,9 +14,9 @@ import numpy as np
 import scipy.io as sio
 
 from pypulseq.Sequence.sequence import Sequence
-from pypulseq.make_adc import makeadc
-from pypulseq.makearbitrary_grad import makearbitrary_grad
-from pypulseq.makearbitrary_rf import make_arbitrary_rf
+from pypulseq.make_adc import make_adc
+from pypulseq.make_arbitrary_grad import make_arbitrary_grad
+from pypulseq.make_arbitrary_rf import make_arbitrary_rf
 from pypulseq.opts import Opts
 
 from interpolation import rf_interpolate,grad_interpolate
@@ -35,7 +35,7 @@ Gradient limits definition for maximum slew rate and maximum amplitude
 gamma = 42576000  # in Hz/T  %Determined from Pulseq - do not change
 
 kwargs_for_opts = {'max_grad': 32, 'grad_unit': 'mT/m', 'max_slew': 130, 'slew_unit': 'T/m/s', 'grad_dead_time': 10e-6}
-system = Opts(kwargs_for_opts)
+system = Opts(max_grad=32, grad_unit='mT/m', max_slew=130, slew_unit='T/m/s', grad_raster_time=10e-6)
 seq = Sequence(system)
 
 """
@@ -68,9 +68,9 @@ All waveforms are also reshaped as (1,x) to fulfill the seq.add_block method req
 Read-out block: balanced stack-of-spirals  
 """
 # Import waveforms
-gx_ro_wav = sio.loadmat('gx1_readout.mat')['gx1'] * gamma / 100  # from G/cm to Hz/m
-gy_ro_wav = sio.loadmat('gy1_readout.mat')['gy1'] * gamma / 100
-gz_ro_wav = sio.loadmat('gz1_readout.mat')['gz1'] * gamma / 100
+gx_ro_wav = sio.loadmat('TOPPE_waveforms/gx1_readout.mat')['gx1'] * gamma / 100  # from G/cm to Hz/m
+gy_ro_wav = sio.loadmat('TOPPE_waveforms/gy1_readout.mat')['gy1'] * gamma / 100
+gz_ro_wav = sio.loadmat('TOPPE_waveforms/gz1_readout.mat')['gz1'] * gamma / 100
 
 # Interpolate and reshape
 gx_ro_wav_orig = grad_interpolate(gx_ro_wav, seq.grad_raster_time).reshape((1, -1))
@@ -78,16 +78,16 @@ gy_ro_wav_orig = grad_interpolate(gy_ro_wav, seq.grad_raster_time).reshape((1, -
 gz_ro_wav_orig = grad_interpolate(gz_ro_wav, seq.grad_raster_time).reshape((1, -1))
 
 # ADC
-kwargs_for_adc = {"num_samples": max(gx_ro_wav_orig.shape), "dwell": system.grad_raster_time}
-adc = makeadc(kwargs_for_adc)
+# kwargs_for_adc = (num_samples=max(gx_ro_wav_orig.shape), dwell=system.grad_raster_time)
+adc = make_adc(num_samples=max(gx_ro_wav_orig.shape), dwell=system.grad_raster_time)
 
 """
 Slab-selective excitation (tip-down) + PRESTO spoiler gradients
 """
 # Import waveforms
-rf_td_wav = sio.loadmat('rf_tipdown.mat')['rf'] * gamma / 10000  # from G to Hz
-gx_td_wav = sio.loadmat('gx_tipdown.mat')['gx'] * gamma / 100  # from G/cm to Hz/m
-gz_td_wav = sio.loadmat('gz_tipdown.mat')['gz'] * gamma / 100
+rf_td_wav = sio.loadmat('TOPPE_waveforms/rf_tipdown.mat')['rf'] * gamma / 10000  # from G to Hz
+gx_td_wav = sio.loadmat('TOPPE_waveforms/gx_tipdown.mat')['gx'] * gamma / 100  # from G/cm to Hz/m
+gz_td_wav = sio.loadmat('TOPPE_waveforms/gz_tipdown.mat')['gz'] * gamma / 100
 
 #Interpolate and reshape
 rf_td_wav = rf_interpolate(rf_td_wav, seq.rf_raster_time).reshape((1, -1))
@@ -98,7 +98,7 @@ gz_td_wav = grad_interpolate(gz_td_wav, seq.grad_raster_time).reshape((1, -1))
 Fat saturation pulse
 """
 # Import waveforms
-rf_fs_wav = sio.loadmat('rf_fatsat.mat')['rf'] * gamma / 10000  # from G to Hz
+rf_fs_wav = sio.loadmat('TOPPE_waveforms/rf_fatsat.mat')['rf'] * gamma / 10000  # from G to Hz
 
 #Interpolate and reshape
 rf_fs_wav = rf_interpolate(rf_fs_wav, seq.rf_raster_time).reshape((1, -1))
@@ -135,7 +135,7 @@ if 0:
     # variable density (non-cartesian) kz undersampling. May be useful later
 else:
     # cartesian variable-density kz undersampling
-    zInd = sio.loadmat('zInd.mat')['zInd']
+    zInd = sio.loadmat('TOPPE_waveforms/zInd.mat')['zInd']
     zInd = (zInd == 1).tolist()[0]
     kzU = list(compress(kzFull, zInd))
 
@@ -174,20 +174,20 @@ for iframe in range(-ndisdaq + 1, nref + 1):#range(-ndisdaq + 1, nref + nt + 1):
 
         # fat sat block
 
-        kwargs_for_arbRF = {'flip_angle': rf_fs_flip, 'system': system, 'signal': rf_fs_wav, 'freq_offset': fs_freq_offset, 'phase_offset': rfphs}
-        rf_fs, _ = make_arbitrary_rf(kwargs_for_arbRF)
+        # kwargs_for_arbRF = {'flip_angle': rf_fs_flip, 'system': system, 'signal': rf_fs_wav, 'freq_offset': fs_freq_offset, 'phase_offset': rfphs}
+        rf_fs, _ = make_arbitrary_rf(flip_angle= rf_fs_flip, system= system, signal= np.squeeze(rf_fs_wav), freq_offset= fs_freq_offset, phase_offset= rfphs)
 
         seq.add_block(rf_fs)
 
         # Slab excitation + PRESTO gradients block
-        kwargs_for_arbRF = {'flip_angle': rf_td_flip, 'system': system, 'signal': rf_td_wav, 'phase_offset': rfphs}
-        rf_td, _ = make_arbitrary_rf(kwargs_for_arbRF)
+        # kwargs_for_arbRF = {'flip_angle': rf_td_flip, 'system': system, 'signal': rf_td_wav, 'phase_offset': rfphs}
+        rf_td, _ = make_arbitrary_rf(flip_angle= rf_td_flip, system= system, signal= np.squeeze(rf_td_wav), phase_offset= rfphs)
 
-        kwargs_for_arbG = {'channel': 'x', 'system': system, 'waveform': gx_td_wav}
-        gx_td = makearbitrary_grad(kwargs_for_arbG)
+        # kwargs_for_arbG = {'channel': 'x', 'system': system, 'waveform': gx_td_wav}
+        gx_td = make_arbitrary_grad(channel= 'x', system= system, waveform= np.squeeze(gx_td_wav))
 
-        kwargs_for_arbG = {'channel': 'z', 'system': system, 'waveform': gz_td_wav}
-        gz_td = makearbitrary_grad(kwargs_for_arbG)
+        # kwargs_for_arbG = {'channel': 'z', 'system': system, 'waveform': gz_td_wav}
+        gz_td = make_arbitrary_grad(channel= 'z', system= system, waveform= np.squeeze(gz_td_wav))
 
         seq.add_block(rf_td, gx_td, gz_td)
 
@@ -214,15 +214,15 @@ for iframe in range(-ndisdaq + 1, nref + 1):#range(-ndisdaq + 1, nref + nt + 1):
             gy_ro_wav = gy_ro_wav_orig
 
 
-        kwargs_for_arbG = {'channel': 'x', 'system': system, 'waveform': gx_ro_wav}
-        gx_ro = makearbitrary_grad(kwargs_for_arbG)
+        # kwargs_for_arbG = {'channel': 'x', 'system': system, 'waveform': gx_ro_wav}
+        gx_ro = make_arbitrary_grad(channel= 'x', system= system, waveform= np.squeeze(gx_ro_wav))
 
-        kwargs_for_arbG = {'channel': 'y', 'system': system, 'waveform': gy_ro_wav}
-        gy_ro = makearbitrary_grad(kwargs_for_arbG)
+        # kwargs_for_arbG = {'channel': 'y', 'system': system, 'waveform': gy_ro_wav}
+        gy_ro = make_arbitrary_grad(channel= 'y', system= system, waveform= np.squeeze(gy_ro_wav))
 
         gz_ro_wav = gz_ro_wav_orig * kz[slice-1]
-        kwargs_for_arbG = {'channel': 'z', 'system': system, 'waveform': gz_ro_wav}
-        gz_ro = makearbitrary_grad(kwargs_for_arbG)
+        # kwargs_for_arbG = {'channel': 'z', 'system': system, 'waveform': gz_ro_wav}
+        gz_ro = make_arbitrary_grad(channel= 'z', system= system, waveform= np.squeeze(gz_ro_wav))
 
         seq.add_block(gx_ro, gy_ro, gz_ro, adc)
 

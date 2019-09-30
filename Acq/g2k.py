@@ -10,9 +10,9 @@ import numpy as np
 def g2k(gx, gy, gz):
 
     g = []
-    for i in range(len(gx[0])):
+    for i in range(len(gx)):
 
-        g.append(complex(gx[0,i],gy[0,i]))
+        g.append(complex(gx[i],gy[i]))
     gts = 10e-6 # gradient sample duration
 
     ktemp = np.cumsum(g)*gts # cycles/m
