@@ -55,12 +55,10 @@ seq.fatsat.dur = 3;            % pulse duration (msec)
 
 %% fMRI sequence parameters
 
-
 % Spoiler gradient size (cycles/voxel). Played on x and z axes.
 % Value of about 1.0-1.5 Gives near-optimal temporal SNR for PRESTO fMRI (see one of my ISMRM abstracts, 2017 I think) 
 seq.fmri.nCyclesSpoil = 1;   
 
-seq.fmri.nLeafs = 3;               % Number of spiral rotations (leafs) for full k-space sampling.
 seq.fmri.nz_samp = 30;             % Sample this many kz points per time-frame (undersampling factor in kz is 54/30 = 1.8)
 seq.fmri.TR = 16.7e-3;             % approximate sequence TR (sec). See toppe.getTRtime()
 seq.fmri.dur = 5*60;               % total duration of fMRI scan (sec)
@@ -70,6 +68,10 @@ if test
 else
 	seq.fmri.nt = 2*round(seq.fmri.dur/seq.fmri.trVol/2);      % number of (undersampled) time-frames
 end
+
+% spiral design parameters
+seq.fmri.nLeafs = 3;               % Number of spiral rotations (leafs) for full k-space sampling.
+seq.fmri.dsamp = 600;              % number of samples for the dense (fully sampled) core. See toppe.utils.spiral.genspivd2()
 
 % fully sampled kz sampling pattern
 for ii = 1:seq.nz

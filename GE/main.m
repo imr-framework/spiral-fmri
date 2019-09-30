@@ -7,10 +7,46 @@ function main(seq)
 %% First create stack-of-spirals fMRI sequence                
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%% Create balanced stack-of-spirals readout leaf (readout.mod). Isotropic resolution.
+%% fat saturation module
+% bw = 500 Hz. Frequency offset (-440 Hz) is set in scanloop.txt.
+slThick = 1000;     % dummy value (determines slice-select gradient, but we won't use it). Just needs to be large to reduce dead time before+after rf pulse.
+toppe.utils.rf.makeslr(seq.fatsat.flip, slThick, seq.fatsat.tbw, seq.fatsat.dur, 0, ...
+                       'ftype', 'ls', 'ofname', 'fatsat.mod', 'system', seq.sysGE);
+
+%% slab-selective excitation module (tipdown.mod). Include (PRESTO) spoiler gradients.
+
+nCyclesSpoil = 0;        % should be balanced, since the PRESTO spoilers are played separately
+[rf,gex] = toppe.utils.rf.makeslr(seq.rf.flip, seq.rf.slabThick, seq.rf.tbw, seq.rf.dur, nCyclesSpoil, ...
+                       'ftype', seq.rf.ftype, 'system', seq.sys, 'writeModFile', false);
+
+% Create spoiler (PRESTO) gradients.
+% Will be placed on two axes for best (RF) spoiling.
+% Derate slew rate a bit to keep PNS < 80% of stimulation threshold.
+gspoil1 = toppe.utils.makecrusher(  seq.fmri.nCyclesSpoil, seq.dz, 0, 0.9*seq.sys.maxSlew/sqrt(2), seq.sys.maxGrad);
+gspoil2 = toppe.utils.makecrusher(2*seq.fmri.nCyclesSpoil, seq.dz, 0, 0.7*seq.sys.maxSlew/sqrt(2), seq.sys.maxGrad);
+
+% create tipdown.mod
+rf = [0*gspoil2(:); zeros(2,1); rf(:); 0*gspoil1(:)];
+gx = [1*gspoil2(:); zeros(2,1); 0*gex(:);  -gspoil1(:)];
+gy = [0*gspoil2(:); zeros(2,1); 0*gex(:); 0*gspoil1(:)];
+gz = [1*gspoil2(:); zeros(2,1); gex(:);  -gspoil1(:)];
+rf = toppe.utils.makeGElength(rf);
+gx = toppe.utils.makeGElength(gx);
+gy = toppe.utils.makeGElength(gy);
+gz = toppe.utils.makeGElength(gz);
+toppe.writemod('rf', rf, 'gx', gx, 'gy', gy, 'gz', gz, 'ofname', 'tipdown.mod', ...
+               'desc', 'RF slab excitation with PRESTO gradients', 'system', seq.sysGE);  % NB! Pass 'sysGE' here, not 'sys'!
+
+%% balanced stack-of-spirals readout module (readout.mod). Isotropic resolution.
 % design spiral
-rmax = seq.n/(2*seq.fov);           % max k-space radius
-[~,g] = toppe.utils.spiral.mintgrad.vds(0.99*seq.sys.maxSlew*1e3, 0.99*seq.sys.maxGrad, seq.sys.raster, seq.fmri.nLeafs, seq.fov, 0, 0, rmax);   % vds returns complex k, g
+% Fully sampled center (first 'dsamp' points); outer part undersampled by factor 'Router'
+%fovvd = seq.fov/seq.fmri.nLeafs;
+%xresvd = seq.n/seq.fmri.nLeafs;
+Router = seq.fmri.nLeafs;
+fovvd  = seq.fov;
+xresvd = seq.n;
+[g] = toppe.utils.spiral.genspivd2(fovvd, xresvd, Router, ...
+	0.99*seq.sys.maxGrad, 0.99*seq.sys.maxSlew*10, seq.fmri.dsamp);
 g = [0; 0; g(:)];           % add a couple of zeroes to make sure k=0 is sampled
 
 % make balanced and same length
@@ -32,7 +68,7 @@ gx1 = [0*gpe(:); zeros(2,1);   gx(:); 0*gpe(:)];
 gy1 = [0*gpe(:); zeros(2,1);   gy(:); 0*gpe(:)];
 gz1 = [  gpe(:); zeros(2,1); 0*gx(:);  -gpe(:)];
 
-% write to .mod file
+% write .mod file
 gx1 = toppe.utils.makeGElength(gx1);
 gy1 = toppe.utils.makeGElength(gy1);
 gz1 = toppe.utils.makeGElength(gz1);
@@ -40,39 +76,7 @@ toppe.writemod('gx', gx1, 'gy', gy1, 'gz', gz1, 'ofname', 'readout.mod', ...
                'desc', 'stack-of-spirals readout module', 'system', seq.sysGE);
 
 
-%% Create slab-selective excitation (tipdown.mod). Include (PRESTO) spoiler gradients.
-
-nCyclesSpoil = 0;       % make it balanced initially -- gradient pre/rephasers will then be modified
-[rf,gex] = toppe.utils.rf.makeslr(seq.rf.flip, seq.rf.slabThick, seq.rf.tbw, seq.rf.dur, nCyclesSpoil, ...
-                       'ftype', seq.rf.ftype, 'system', seq.sys, 'writeModFile', false);
-
-% Create spoiler (PRESTO) gradients.
-% Will be placed on two axes for best (RF) spoiling.
-gspoil1 = toppe.utils.makecrusher(seq.fmri.nCyclesSpoil, seq.dz, 0, seq.sys.maxSlew, seq.sys.maxGrad);
-gspoil2 = toppe.utils.makecrusher(2*seq.fmri.nCyclesSpoil, seq.dz, 0, seq.sys.maxSlew, seq.sys.maxGrad);
-
-% create tipdown.mod
-rf = [0*gspoil2(:); zeros(2,1); rf(:); 0*gspoil1(:)];
-gx = [1*gspoil2(:); zeros(2,1); 0*gex(:);  -gspoil1(:)];
-gy = [0*gspoil2(:); zeros(2,1); 0*gex(:); 0*gspoil1(:)];
-gz = [1*gspoil2(:); zeros(2,1); gex(:);  -gspoil1(:)];
-rf = toppe.utils.makeGElength(rf);
-gx = toppe.utils.makeGElength(gx);
-gy = toppe.utils.makeGElength(gy);
-gz = toppe.utils.makeGElength(gz);
-toppe.writemod('rf', rf, 'gx', gx, 'gy', gy, 'gz', gz, 'ofname', 'tipdown.mod', ...
-               'desc', 'RF slab excitation with PRESTO gradients', 'system', seq.sysGE);  % NB! Pass 'sysGE' here, not 'sys'!
-
 return;
-
-%% Create fat saturation pulse
-% bw = 500 Hz. Frequency offset (-440 Hz) is set in scanloop.txt.
-seq.fatsat.flip = 50;
-slThick = 1000;     % dummy value (determines slice-select gradient, but we won't use it). Just needs to be large to reduce dead time before+after rf pulse
-seq.fatsat.tbw = 1.5;
-seq.fatsat.dur = 3;            % pulse duration (msec)
-toppe.utils.rf.makeslr(seq.fatsat.flip, slThick, seq.fatsat.tbw, seq.fatsat.dur, 0, ...
-                       'ftype', 'ls', 'ofname', 'fatsat.mod', 'system', seq.sysGE);
 
 %% Create scanloop.txt
 nz_samp = 30;                  % Sample this many kz points per time-frame (undersampling factor in kz is 54/30 = 1.8)
@@ -159,7 +163,7 @@ for iframe = (-ndisdaq+1):seq.nframes
 		slice = iz;
 		view = max(iframe,1);
 		if iframe < (seq.nref+1)
-			ileaf = mod(mod(iframe,seq.nleafs) + iz,seq.nleafs) + 1;   % rotate leaf every frame and every kz platter
+			ileaf = mod(mod(iframe,seq.nLeafs) + iz,seq.nLeafs) + 1;   % rotate leaf every frame and every kz platter
 		else
 			ileaf = mod(iz,seq.nleafs) + 1;                        % rotate leaf every kz platter (i.e., same undersampling pattern for every frame)
 		end
