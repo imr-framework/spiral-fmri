@@ -32,7 +32,7 @@ This creates two sequences:
 Untar each file (in turn) in /usr/g/bin/ on scanner host and scan with toppev3.e.
 
 Notes:
-* Modules are designed so that **predicted PNS is < 80% of threshold** for all modules.
+* Modules are designed so that **predicted PNS is < 80% of stimulation threshold** for all modules.
 To view predicted PNS, see toppe.pns, or do
 ```matlab
 >> toppe.plotmod('all');
