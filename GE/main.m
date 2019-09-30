@@ -1,6 +1,7 @@
 function main(seq)
 % Create stack-of-spirals PRESTO fMRI sequence for TOPPE.
-% Also create matched 3D spin-warp B0 sequence (also used for sensitivity map estimation)
+% Also create matched 3D spin-warp (GRE) B0 field mapping sequence, 
+% that also provides coil sensitivity maps.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -49,6 +50,10 @@ xresvd = seq.n;
 	0.99*seq.sys.maxGrad, 0.99*seq.sys.maxSlew*10, seq.fmri.dsamp);
 g = [0; 0; g(:)];           % add a couple of zeroes to make sure k=0 is sampled
 
+%rmax = seq.n/(2*seq.fov);           % max k-space radius
+%[~,g] = toppe.utils.spiral.mintgrad.vds(0.99*seq.sys.maxSlew*1e3, 0.99*seq.sys.maxGrad, seq.sys.raster, seq.fmri.nLeafs, seq.fov, 0, 0, rmax);   % vds returns complex k, g
+%g = [0; 0; g(:)];           % add a couple of zeroes to make sure k=0 is sampled
+
 % make balanced and same length
 gx = toppe.utils.makebalanced(real(g(:)), 'maxSlew', seq.sys.maxSlew/sqrt(2), 'maxGrad', seq.sys.maxGrad);
 gy = toppe.utils.makebalanced(imag(g(:)), 'maxSlew', seq.sys.maxSlew/sqrt(2), 'maxGrad', seq.sys.maxGrad);
@@ -90,31 +95,30 @@ if seq.fmri.writeKspace
 	k1 = complex(kx1,ky1);  % single spiral 'prototype'
 	ndat = size(k1,1);
 	necho = 1;
-	ksp.kx = NaN*ones(ndat, seq.nz, necho, seq.nframes);   % to match the 'slice-echo-view' order of 'dat' array returned by toppe.utils.loadpfile
+	ksp.kx = NaN*ones(ndat, seq.nz, necho, seq.fmri.nframes);   % to match the 'slice-echo-view' order of 'dat' array returned by toppe.utils.loadpfile
 	ksp.ky = ksp.kx;
 	ksp.kz = ksp.kx;
 end
+
 fprintf('Writing scanloop.txt for fMRI sequence\n');
 toppe.write2loop('setup');
-for iframe = (-ndisdaq+1):seq.nframes
-	if ~mod(iframe,10)
-		fprintf([repmat('\b',1,20) sprintf('%d of %d', iframe+ndisdaq, seq.nt+ndisdaq+seq.nref )]);
+for iframe = 1:seq.fmri.nframes
+	if ~mod(iframe,10) & iframe > 0
+		fprintf([repmat('\b',1,20) sprintf('%d of %d', iframe, seq.fmri.nframes)]);
 	end
 
 	% Set kz sampling pattern for this frame.
-	if iframe < (seq.nref+1)
-		kz1 = kzFull;                % numel(kz) = seq.nz;
+	if iframe < (seq.fmri.nref*seq.fmri.nLeafs+1)
+		kz1 = seq.fmri.kzFull;       % numel(kz1) = seq.nz;
 	else
-		kz1 = kzU;                   % numel(kz) = nz_samp;
+		kz1 = seq.fmri.kzU;          % numel(kz1) = seq.fmri.nz_samp;
 	end
 
 	% set 'view' data storage index
 	if iframe < 1 
 		dabmode = 'off';
-		view  = 1;
 	else
 		dabmode = 'on';
-		view = iframe;
 	end
 
 	for iz = 1:numel(kz1)
@@ -122,29 +126,31 @@ for iframe = (-ndisdaq+1):seq.nframes
    	% toppe.write2loop('fatsat.mod', 'RFphase', rfphs, 'Gamplitude', [0 0 0]');
 
    	% rf excitation (and PRESTO gradients)
-   	toppe.write2loop('tipdown.mod', 'RFphase', rfphs, 'Gamplitude', [1 0 1]');
+   	toppe.write2loop('tipdown.mod', 'RFphase', rfphs);
 
    	% readout. Data is stored in 'slice', 'echo', and 'view' indeces.
-		slice = iz;
-		view = max(iframe,1);
-		if iframe < (seq.nref+1)
-			ileaf = mod(mod(iframe,seq.nLeafs) + iz,seq.nLeafs) + 1;   % rotate leaf every frame and every kz platter
+		if iframe < (seq.fmri.nref*seq.fmri.nLeafs+1)
+			% rotate leaf every frame and every kz platter
+			ileaf = mod(mod(iframe,seq.fmri.nLeafs)+iz, seq.fmri.nLeafs) + 1;   
 		else
-			ileaf = mod(iz,seq.nleafs) + 1;                        % rotate leaf every kz platter (i.e., same undersampling pattern for every frame)
+			% rotate leaf every kz platter;
+			% same undersampling pattern for every frame
+			ileaf = mod(iz,seq.fmri.nLeafs) + 1;        
 		end
-		%ileaf = mod(mod(iframe,seq.nleafs) + iz,seq.nleafs) + 1;   % rotate leaf every frame and every kz platter
-		phi = 2*pi*(ileaf-1)/seq.nleafs;                          % leaf rotation angle (radians)
+		phi = 2*pi*(ileaf-1)/seq.fmri.nLeafs;        % leaf rotation angle (radians)
+		slice = iz;
 		echo = 1;
+		view = max(iframe,1);
    	toppe.write2loop('readout.mod', 'DAQphase', rfphsLast, 'slice', slice, 'echo', echo, ...
 			'view', view, 'Gamplitude', [1 1 kz1(iz)]', 'dabmode', dabmode, 'rot', phi);
 
 	   % update rf phase (RF spoiling)
 		rfphsLast = rfphs;
-		rfphs = rfphs + (rf_spoil_seed/180 * pi)*rf_spoil_seed_cnt ;  % radians
+		rfphs = rfphs + (seq.fmri.rf_spoil_seed/180 * pi)*rf_spoil_seed_cnt ;  % radians
 		rf_spoil_seed_cnt = rf_spoil_seed_cnt + 1;
 
 		% kspace info for this TR
-		if strcmp(dabmode, "on") & writeKspace
+		if strcmp(dabmode, 'on') & seq.fmri.writeKspace
 			k1tmp = k1.*exp(1i*phi)*seq.fov/seq.n;         % convert from cycles/cm to cycles/sample
 			ksp.kx(:,slice,echo,view) = real(k1tmp);
 			ksp.ky(:,slice,echo,view) = imag(k1tmp);
@@ -158,10 +164,13 @@ end
 fprintf('\n');
 toppe.write2loop('finish');
 
+fprintf('fMRI volume TR: %.1f ms\n', toppe.getTRtime(1,2)*1e3*seq.fmri.nz_samp);
+fprintf('fMRI sequence duration: %dm %ds\n', floor(toppe.getscantime/60), round(60*rem(toppe.getscantime/60,1)));
+
 %% Save k-space trajectory and other sequence info 
 %[rf,gx,gy,gz,desc,paramsint16,paramsfloat] = toppe.readmod('readout.mod');
 %[ksp.kx ksp.ky] = toppe.utils.g2k([gx(:) gy(:)], seq.nleafs);
-if writeKspace
+if seq.fmri.writeKspace
 	ksp.kx = single(ksp.kx);
 	ksp.ky = single(ksp.ky);
 	ksp.kz = single(ksp.kz);
@@ -169,12 +178,15 @@ if writeKspace
 	%save -v7.3 ksp ksp
 	save ksp ksp
 	fprintf('done\n');
+	kspfile = 'ksp.mat';
+else
+	kspfile = '';
 end
 
 %% create tar file
 system('mkdir -p tar');
 cd tar
-system('tar cf scan,fmri.tar ../main.m ../params.mat ../ksp.mat ../*.mod ../modules.txt ../scanloop.txt');
+system(sprintf('tar cf scan,fmri.tar ../main.m ../getparams.m ../zInd.mat %s ../*.mod ../modules.txt ../scanloop.txt', kspfile));
 cd ..
 
 %% display sequence
@@ -191,13 +203,11 @@ seq.plot_sg('TimeRange', [10 10.05]);
 cd ..
 end
 
-fprintf('Scan time for fMRI sequence: %.2f min\n', toppe.getscantime/60);
-
-%keyboard
+return;
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% Write 3D B0 mapping sequence                               
+%% Then create 3D B0 mapping sequence                         
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Create readout module (readout.mod). Matrix size must match the fMRI acquisition.

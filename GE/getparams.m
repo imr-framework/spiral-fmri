@@ -10,7 +10,7 @@ function seq = getparams
 test = true;         % Create a sequence containing only a few time frames (for testing recon, etc)
 
 %% Global parameters (common to both B0 and fMRI sequence)
-seq.fmri.writeKspace = false;   % Write k-space locations for entire scan to a (large) .mat file. Units: cycles/cm
+seq.fmri.writeKspace = true;   % Write k-space locations for entire scan to a (large) .mat file. Units: cycles/cm
 
 % system limit structs
 % NB! If passing 'sys' to writemod.m, 'maxGrad' MUST match the physical system limit -- since gradients are scaled relative to this.
@@ -33,10 +33,10 @@ fprintf(fid, modFileText);
 fclose(fid);
 
 % FOV and resolution
-seq.n = 72;                     % in-plane matrix size of reconstructed image
-seq.fov = 24;                   % in-plane fov (cm)
+seq.n = 74;                     % in-plane matrix size of reconstructed image
+seq.fov = 22;                   % in-plane fov (cm)
 seq.nz = 54;                    % number of reconstructed pixels along z
-seq.fovz = 18;                  % fov along z (cm)
+seq.fovz = 16;                  % fov along z (cm)
 seq.dz = seq.fovz/seq.nz;       % reconstructed slice thickness (cm)
 seq.dx = seq.fov/seq.n;         % in-plane voxel dimension (cm)
 
@@ -91,10 +91,9 @@ else
 	seq.fmri.kzU = seq.fmri.kzFull(logical(zInd));
 end
 
-seq.fmri.ndisdaq = 2;        % number of (fully sampled) dummy TRs to reach steady state
-seq.fmri.nref    = 4;        % number of fully sampled frames acquired at beginning (for, e.g., GRAPPA calibration)
+seq.fmri.nref = 4;    % number of fully sampled frames acquired at beginning (for, e.g., GRAPPA calibration)
 
-seq.fmri.nframes = seq.fmri.nref*seq.fmri.nLeafs + seq.fmri.nt; % total number of frames
+seq.fmri.nframes = seq.fmri.nref*seq.fmri.nLeafs + seq.fmri.nt;   % total number of frames
 
 % For 30 kz platters per frame and rf_spoil_seed=150, ...
 % we have mod(nz_samp*rf_spoil_seed,360)=180 which is what we need for improved RF spoiling...
