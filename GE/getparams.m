@@ -53,9 +53,9 @@ seq.fatsat.flip = 50;
 seq.fatsat.tbw = 1.5;
 seq.fatsat.dur = 3;            % pulse duration (msec)
 
-%% fMRI sequence parameters
+%% Sequence-specific parameters
 
-% Spoiler gradient size (cycles/voxel). Played on x and z axes.
+% Spoiler gradient sizes (cycles/voxel). Played on x and z axes.
 % Value of about 1.0-1.5 Gives near-optimal temporal SNR for PRESTO fMRI (see one of my ISMRM abstracts, 2017 I think) 
 seq.fmri.nCyclesSpoil = 1;   
 
@@ -100,111 +100,10 @@ seq.fmri.nframes = seq.fmri.nref*seq.fmri.nLeafs + seq.fmri.nt;   % total number
 % using our method in Magn Reson Med. 2016 Jun;75(6):2388-93. doi: 10.1002/mrm.25843.
 seq.fmri.rf_spoil_seed = 150;  
 
-return;
-
-
-seq.b0.nCyclesSpoil = 1.5;   % SPGR spoiler gradient
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% Write 3D B0 mapping sequence                               
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%% Create readout module (readout.mod). Matrix size must match the fMRI acquisition.
-% Remember: makegre creates y and z phase-encodes based on isotropic resolution
-% Again, use 'sys' in design, but 'sysGE' in writemod().
-[gx,gy,gz] = toppe.utils.makegre(seq.fov, seq.n, seq.dx, 'system', seq.sys, 'ncycles', 1);
-[~,~,~,~,~,hdrints,hdrfloats] = toppe.readmod('readout.mod');
-npre = hdrints(1);       % number of samples before readout plateau
-npixro = hdrints(2);     % number of samples during readout plateau
-oprbw = hdrfloats(20);   % readout bandwidth (max +/ 125 kHz)
-toppe.writemod('gx', gx, 'gy', gy, 'gz', gz, 'ofname', 'readout.mod', 'hdrints', [npre npixro], 'hdrfloats', [oprbw], ...
-               'desc', '3D spin-warp readout', 'system', seq.sysGE);  % NB! Pass 'sysGE' here, not 'sys'!
-
-%% Create slab-selective excitation module (tipdown.mod)
-seqb0.rf.flip = 4;                            % excitation angle (degrees)
-seqb0.rf.slabThick = seq.rf.slabThick*1.1;    % cm. Excite a bit more than the fMRI slab to ensure that edge slices don't drop out.
-seqb0.rf.tbw = 8;                             % time-bandwidth product of SLR pulse 
-seqb0.rf.dur = 1;                             % RF pulse duration (msec)
-seqb0.rf.ncyclesspoil = 1e-3;                 % small (but non-zero) so makeslr doesn't put a spoiler (or balancer) in front
-seqb0.rf.ftype = 'ls';
-[rf,gex] = toppe.utils.rf.makeslr(seqb0.rf.flip, seqb0.rf.slabThick, seqb0.rf.tbw, seqb0.rf.dur, seqb0.rf.ncyclesspoil, ...
-             'ftype', seqb0.rf.ftype, 'system', seq.sys, 'ofname', 'tipdown.mod');
-
-seqb0.nCyclesSpoil = 2;
-gspoil = toppe.utils.makecrusher(seqb0.nCyclesSpoil, seq.dz, 0, seq.sys.maxSlew, seq.sys.maxGrad);
-
-rf = toppe.utils.makeGElength([0*gspoil(:); zeros(2,1); rf(:)]);
-gx = toppe.utils.makeGElength([1*gspoil(:); zeros(2,1); 0*gex(:)]);
-gz = toppe.utils.makeGElength([1*gspoil(:); zeros(2,1); gex(:)]);
-
-toppe.writemod('rf', rf, 'gx', gx, 'gz', gz, 'ofname', 'tipdown.mod', ...
-               'desc', 'RF slab excitation', 'system', seq.sysGE);  % NB! Pass 'sysGE' here, not 'sys'!
-
-
-%% Create scanloop.txt
-rfphs = 0;              % radians
-rf_spoil_seed_cnt = 0;
-rf_spoil_seed = 117;
-textra = 140;          % (msec) slow down sequence to reduce SAR
-
-nx = seq.n;
-ny = seq.n;
-nz = seq.nz;
-
-tdelay = 3;           % (msec) Slow down scan a bit to improve SNR and reduce artifacts from imperfect spoiling.
-
-fprintf('Writing scanloop.txt for B0 sequence\n');
-toppe.write2loop('setup');
-for iz = -0:nz           % iz < 1 are discarded acquisitions (to reach steady state)
-	fprintf([repmat('\b',1,20) sprintf('%d of %d', iz, nz)]);
-
-	for iy = 1:ny
-		for iim = 1:2
-			switch iim
-				case 1
-					textra1 = 0;
-					textra2 = 2.3 + tdelay;     % msec
-				case 2
-					textra1 = 2.3;     % msec
-					textra2 = 0 + tdelay;
-			end
-
-         if iz > 0
-            a_gy = ((iy-1+0.5)-ny/2)/(ny/2);    % y phase-encode amplitude, scaled to (-1,1) range
-        		a_gz = ((iz-1+0.5)-nz/2)/(nz/2);    % z phase-encode amplitude, scaled to (-1,1) range
-				dabmode = 'on';
-         else
-            a_gy = 0;
-         	a_gz = 0; 
-				dabmode = 'off';
-         end
-
-	   	% rf excitation
-	  		toppe.write2loop('tipdown.mod', 'RFphase', rfphs, 'RFamplitude', 1.0, 'textra', textra1);
-
-		 	% readout. Data is stored in 'slice', 'echo', and 'view' indeces.
-   		toppe.write2loop('readout.mod', 'DAQphase', rfphs, ...
-				'slice', max(iz,1), 'echo', iim, 'view', iy, ...
-				'dabmode', dabmode, 'Gamplitude', [1 a_gy a_gz]', 'textra', textra2);
-
-		   % update rf phase (RF spoiling)
-			rfphs = rfphs + (rf_spoil_seed/180 * pi)*rf_spoil_seed_cnt ;  % radians
-			rf_spoil_seed_cnt = rf_spoil_seed_cnt + 1;
-      end
-	end
-end
-fprintf('\n');
-toppe.write2loop('finish');
-
-%% Save parameters and create tar file. We can reuse modules.txt from above.
-save params seq seqb0
-system('mkdir -p tar');
-cd tar
-system('tar cf scan,b0.tar ../main.m ../params.mat ../*.mod ../modules.txt ../scanloop.txt');
-cd ..
-
-fprintf('Scan time for 3D sequence: %.2f min\n', toppe.getscantime/60);
+%% B0 mapping sequence parameters
+seq.b0.nCyclesSpoil = 1.5;   % SPGR spoiler gradient size
+seq.b0.rf_spoil_seed = 117;  
+seq.b0.tdelay = 5;           % (msec) Slow down scan a bit to improve SNR and reduce artifacts from imperfect spoiling.
 
 return;
 
