@@ -28,6 +28,7 @@ TODO
 >> params = getparams;
 >> main(params);
 >> toppe.plotseq(1,10);    % plot the first 5 TRs
+>> toppe.plotmod('all');   % view modules (including PNS)
 ```
 
 This creates two sequences:
