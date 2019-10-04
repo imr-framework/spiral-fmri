@@ -25,7 +25,7 @@ TODO
 ## MAIN SCRIPT
 
 ```matlab
->> params = getparams;
+>> params = getparams();
 >> main(params);
 >> toppe.plotseq(1,10);    % plot the first 5 TRs
 >> toppe.plotmod('all');   % view modules (including PNS)
@@ -69,7 +69,7 @@ This trick relies on using the same k-space trajectory for each (undersampled) t
 <!--
 ```matlab
 >> ksp = getspiralkspace;
->> params = getparams;
+>> params = getparams();
 >> imSize = [params.n params.n params.nz];
 >> ims = recon(d, ksp, params.fov, imSize);
 ```
