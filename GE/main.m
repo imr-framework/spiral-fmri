@@ -36,7 +36,7 @@ gx = toppe.utils.makeGElength(gx);
 gy = toppe.utils.makeGElength(gy);
 gz = toppe.utils.makeGElength(gz);
 toppe.writemod('rf', rf, 'gx', gx, 'gy', gy, 'gz', gz, 'ofname', 'tipdown.mod', ...
-               'desc', 'RF slab excitation with PRESTO gradients', 'system', seq.sysGE);  % NB! Pass 'sysGE' here, not 'sys'!
+               'desc', 'RF slab excitation with PRESTO gradients', 'system', seq.sysGE);  % NB! Pass 'seq.sysGE' here, not 'seq.sys'!
 
 %% balanced stack-of-spirals readout module (readout.mod). Isotropic resolution.
 % design spiral
@@ -48,7 +48,7 @@ fovvd  = seq.fov;
 xresvd = seq.n;
 [g] = toppe.utils.spiral.genspivd2(fovvd, xresvd, Router, ...
 	0.99*seq.sys.maxGrad, 0.99*seq.sys.maxSlew*10, seq.fmri.dsamp);
-g = [0; 0; g(:)];           % add a couple of zeroes to make sure k=0 is sampled
+g = [0; 0; g(:)];           % add a couple of zeroes to make sure k=0 is sampled (?)
 
 %rmax = seq.n/(2*seq.fov);           % max k-space radius
 %[~,g] = toppe.utils.spiral.mintgrad.vds(0.99*seq.sys.maxSlew*1e3, 0.99*seq.sys.maxGrad, seq.sys.raster, seq.fmri.nLeafs, seq.fov, 0, 0, rmax);   % vds returns complex k, g
