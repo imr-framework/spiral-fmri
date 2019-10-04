@@ -8,6 +8,11 @@ See https://toppemri.github.io/
 $ git clone git@github.com:toppeMRI/toppe.git
 ```
 
+It's a good idea to update your local copy periodically:
+```
+$ git pull
+```
+
 Add the 'toppe' folder to your Matlab path.
 ```matlab
 >> addpath('./toppe/');
