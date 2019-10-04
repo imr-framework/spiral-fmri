@@ -186,7 +186,7 @@ end
 %% create tar file
 system('mkdir -p tar');
 cd tar
-system(sprintf('tar cf scan,fmri.tar ../main.m ../getparams.m ../zInd.mat %s ../*.mod ../modules.txt ../scanloop.txt', kspfile));
+system(sprintf('tar cf scan,fmri.tar ../main.m ../getparams.m ../zInd.mat ../%s ../*.mod ../modules.txt ../scanloop.txt', kspfile));
 cd ..
 
 %% display sequence
