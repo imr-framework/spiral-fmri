@@ -27,6 +27,7 @@ TODO
 ```matlab
 >> params = getparams;
 >> main(params);
+>> toppe.plotseq(1,10);    % plot the first 5 TRs
 ```
 
 This creates two sequences:
