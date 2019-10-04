@@ -62,15 +62,17 @@ Apply temporal filter to raw k-space data BEFORE reconstructing, to remove ghost
 This trick relies on using the same k-space trajectory for each (undersampled) temporal frame.
 ```matlab
 >> d = toppe.utils.loadpfile(pfile);
->> d = tfilt(d);
+>> d = tfilt(d);   % TODO
 ```
 
 #### Image reconstruction
+<!--
 ```matlab
 >> ksp = getspiralkspace;
 >> params = getparams;
 >> imSize = [params.n params.n params.nz];
 >> ims = recon(d, ksp, params.fov, imSize);
 ```
+-->
 
 
