@@ -38,8 +38,8 @@ fclose(fid);
 % FOV and resolution
 seq.n = 74;                     % in-plane matrix size of reconstructed image
 seq.fov = 22;                   % in-plane fov (cm)
-seq.nz = 54;                    % number of reconstructed pixels along z
-seq.fovz = 16;                  % fov along z (cm)
+seq.nz = 30;                    % number of reconstructed pixels along z
+seq.fovz = round(seq.nz*(seq.fov/seq.n));    % fov along z (cm)
 seq.dz = seq.fovz/seq.nz;       % reconstructed slice thickness (cm)
 seq.dx = seq.fov/seq.n;         % in-plane voxel dimension (cm)
 
@@ -91,7 +91,7 @@ if 0
 else
 	% Cartesian variable-density kz undersampling
 	load zInd;
-	seq.fmri.kzU = seq.fmri.kzFull(logical(zInd));
+	%seq.fmri.kzU = seq.fmri.kzFull(logical(zInd));
 end
 
 seq.fmri.nref = 4;    % number of fully sampled frames acquired at beginning (for, e.g., GRAPPA calibration)

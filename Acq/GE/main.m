@@ -114,11 +114,12 @@ for iframe = 1:seq.fmri.nframes
 	end
 
 	% Set kz sampling pattern for this frame.
-	if iframe < (seq.fmri.nref*seq.fmri.nLeafs+1)
-		kz1 = seq.fmri.kzFull;       % numel(kz1) = seq.nz;
-	else
-		kz1 = seq.fmri.kzU;          % numel(kz1) = seq.fmri.nz_samp;
-	end
+	kz1 = seq.fmri.kzFull;       % numel(kz1) = seq.nz;
+	%if iframe < (seq.fmri.nref*seq.fmri.nLeafs+1)
+	%	kz1 = seq.fmri.kzFull;       % numel(kz1) = seq.nz;
+	%else
+	%	kz1 = seq.fmri.kzU;          % numel(kz1) = seq.fmri.nz_samp;
+	%end
 
 	% set 'view' data storage index
 	if iframe < 1 
