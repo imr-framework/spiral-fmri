@@ -1,6 +1,7 @@
 function main(seq)
-% Create stack-of-spirals PRESTO fMRI sequence for TOPPE.
-% Also create matched 3D spin-warp (GRE) B0 field mapping sequence, 
+% Create stack-of-spirals PRESTO (or SPGR/FLASH) fMRI sequence for TOPPE.
+%
+% TODO:Also create matched 3D spin-warp (GRE) B0 field mapping sequence, 
 % that also provides coil sensitivity maps.
 
 
@@ -20,11 +21,16 @@ nCyclesSpoil = 0;        % should be balanced, since the PRESTO spoilers are pla
 [rf,gex] = toppe.utils.rf.makeslr(seq.rf.flip, seq.rf.slabThick, seq.rf.tbw, seq.rf.dur, nCyclesSpoil, ...
                        'ftype', seq.rf.ftype, 'system', seq.sys, 'writeModFile', false);
 
-% Create spoiler (PRESTO) gradients.
+% Create spoiler gradients.
 % Will be placed on two axes for best (RF) spoiling.
 % Derate slew rate a bit to keep PNS < 80% of stimulation threshold.
 gspoil1 = toppe.utils.makecrusher(  seq.fmri.nCyclesSpoil, seq.dz, 0, 0.9*seq.sys.maxSlew/sqrt(2), seq.sys.maxGrad);
 gspoil2 = toppe.utils.makecrusher(2*seq.fmri.nCyclesSpoil, seq.dz, 0, 0.7*seq.sys.maxSlew/sqrt(2), seq.sys.maxGrad);
+
+if strcmp(seq.type, 'spgr')
+	gspoil2 = gspoil1;
+	gspoil1 = [];
+end
 
 % create tipdown.mod
 rf = [0*gspoil2(:); zeros(2,1); rf(:); 0*gspoil1(:)];
@@ -36,7 +42,7 @@ gx = toppe.utils.makeGElength(gx);
 gy = toppe.utils.makeGElength(gy);
 gz = toppe.utils.makeGElength(gz);
 toppe.writemod('rf', rf, 'gx', gx, 'gy', gy, 'gz', gz, 'ofname', 'tipdown.mod', ...
-               'desc', 'RF slab excitation with PRESTO gradients', 'system', seq.sysGE);  % NB! Pass 'seq.sysGE' here, not 'seq.sys'!
+               'desc', 'slab excitation module', 'system', seq.sysGE);  % NB! Pass 'seq.sysGE' here, not 'seq.sys'!
 
 %% balanced stack-of-spirals readout module (readout.mod). Isotropic resolution.
 % design spiral
@@ -101,7 +107,7 @@ if seq.fmri.writeKspace
 end
 
 fprintf('Writing scanloop.txt for fMRI sequence\n');
-toppe.write2loop('setup');
+toppe.write2loop('setup', 'version', 3);
 for iframe = 1:seq.fmri.nframes
 	if ~mod(iframe,10) & iframe > 0
 		fprintf([repmat('\b',1,20) sprintf('%d of %d', iframe, seq.fmri.nframes)]);
@@ -141,7 +147,12 @@ for iframe = 1:seq.fmri.nframes
 		slice = iz;
 		echo = 1;
 		view = max(iframe,1);
-   	toppe.write2loop('readout.mod', 'DAQphase', rfphsLast, 'slice', slice, 'echo', echo, ...
+		if strcmp(seq.type, 'presto')
+			daqphs = rfphsLast;
+		else
+			daqphs = rfphs;
+		end
+   	toppe.write2loop('readout.mod', 'DAQphase', daqphs, 'slice', slice, 'echo', echo, ...
 			'view', view, 'Gamplitude', [1 1 kz1(iz)]', 'dabmode', dabmode, 'rot', phi);
 
 	   % update rf phase (RF spoiling)
