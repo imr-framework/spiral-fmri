@@ -13,7 +13,7 @@ test = true;         % Create a sequence containing only a few time frames (for 
 %% Global parameters (common to both B0 and fMRI sequence)
 seq.fmri.writeKspace = true;   % Write k-space locations for entire scan to a (large) .mat file. Units: cycles/cm
 
-seq.type = 'spgr';   % 'spgr' or 'presto'
+seq.type = 'presto';   % 'spgr' or 'presto'
 
 % system limit structs
 % NB! If passing 'sys' to writemod.m, 'maxGrad' MUST match the physical system limit -- since gradients are scaled relative to this.
