@@ -99,7 +99,7 @@ rf_spoil_seed_cnt = 0;
 if seq.fmri.writeKspace
 	[rf,gx,gy] = toppe.readmod('readout.mod');  % one spiral leaf
 	[kx1,ky1] = toppe.utils.g2k([gx(:,1) gy(:,1)],1);
-	k1 = complex(kx1,ky1);  % single spiral 'prototype'
+	k1 = complex(kx1,ky1);  % single spiral 'prototype' [cycles/cm]
 	ndat = size(k1,1);
 	necho = 1;
 	ksp.kx = NaN*ones(ndat, seq.nz, necho, seq.fmri.nframes);   % to match the 'slice-echo-view' order of 'dat' array returned by toppe.utils.loadpfile
@@ -122,7 +122,6 @@ for iframe = 1:seq.fmri.nframes
 	%	kz1 = seq.fmri.kzU;          % numel(kz1) = seq.fmri.nz_samp;
 	%end
 
-	% set 'view' data storage index
 	if iframe < 1 
 		dabmode = 'off';
 	else
