@@ -30,23 +30,26 @@ dat = flipdim(dat,1);
 %dat = circshift(dat,0);
 dat = double(dat); 
 
-% pick out one time-frame
-dat = dat(:,:,:,:,frames);    % [ndat ncoil nslice 1 nLeafs]
+% pick out data that is to be combined prior to reconstruction 
+dat =   dat(sampWin,:,:,:,frames);    % [ndat ncoil nslice 1 >=nLeafs]
+kx = ksp.kx(sampWin,  :,:,frames);    % [ndat nslice 1 nframes]
+ky = ksp.ky(sampWin,  :,:,frames);
 
-% permute (as required by reconSoS below)
-dat = permute(dat, [1 5 3 4 2]);         % [ndat nLeafs nslice 1 ncoils]            
-
-% crop
-kx = squeeze(ksp.kx(sampWin,1,1,frames));
-ky = squeeze(ksp.ky(sampWin,1,1,frames));
-dat = dat(sampWin,:,:,:,:);
+% reshape as required by reconSoS2
+[ndat ncoil nslice necho nframes] = size(dat);
+dat = permute(dat, [3 1 4 5 2]);                         % [nslice ndat necho nframes ncoil] 
+dat = reshape(dat, [nslice ndat*necho*nframes ncoil]);
+kx = permute(kx, [2 1 3 4]);                             % [nslice ndat necho nframes]
+ky = permute(ky, [2 1 3 4]);                             % ""
+kx = reshape(kx, [nslice ndat*necho*nframes]);
+ky = reshape(ky, [nslice ndat*necho*nframes]);
 
 % reconstruct
 % dat = [ndat nleafs nz ntp ncoils]
 % kx  = [ndat leafs]
 kx = double(kx);
 ky = double(ky);
-[imsos] = toppe.utils.spiral.reconSoS(dat, kx, ky, [fov fov], [n n]);
+[imsos] = toppe.utils.spiral.reconSoS2(dat, kx, ky, [fov fov], [n n]);
 
 % shift FOV
 %ims(:,:,:,ifr) = circshift(imtmp, fovshift);
