@@ -55,6 +55,7 @@ xresvd = seq.n;
 [g] = toppe.utils.spiral.genspivd2(fovvd, xresvd, Router, ...
 	0.99*seq.sys.maxGrad, 0.99*seq.sys.maxSlew*10, seq.fmri.dsamp);
 g = [0; 0; g(:)];           % add a couple of zeroes to make sure k=0 is sampled (?)
+fprintf(sprintf('spiral sampling window: 1:%d\n', length(g)));
 
 %rmax = seq.n/(2*seq.fov);           % max k-space radius
 %[~,g] = toppe.utils.spiral.mintgrad.vds(0.99*seq.sys.maxSlew*1e3, 0.99*seq.sys.maxGrad, seq.sys.raster, seq.fmri.nLeafs, seq.fov, 0, 0, rmax);   % vds returns complex k, g
@@ -163,7 +164,7 @@ for iframe = 1:seq.fmri.nframes
 
 		% kspace info for this TR
 		if strcmp(dabmode, 'on') & seq.fmri.writeKspace
-			k1tmp = k1.*exp(1i*phi)*seq.fov/seq.n;         % convert from cycles/cm to cycles/sample
+			k1tmp = k1.*exp(1i*phi);   %*seq.fov/seq.n;         % convert from cycles/cm to cycles/sample
 			ksp.kx(:,slice,echo,view) = real(k1tmp);
 			ksp.ky(:,slice,echo,view) = imag(k1tmp);
 			ksp.kz(:,slice,echo,view) = kz1(iz)/2;         % cycles/sample
