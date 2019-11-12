@@ -10,6 +10,7 @@ from itertools import compress
 from math import pi
 from cmath import exp
 
+import matplotlib.pyplot as plt
 import numpy as np
 import scipy.io as sio
 
@@ -19,10 +20,13 @@ from pypulseq.make_arbitrary_grad import make_arbitrary_grad
 from pypulseq.make_arbitrary_rf import make_arbitrary_rf
 from pypulseq.opts import Opts
 
-from interpolation import rf_interpolate,grad_interpolate
-from g2k import g2k
+from Acq.interpolation import rf_interpolate,grad_interpolate
+from Acq.g2k import g2k
+from Acq.python_getparams import struct2python
 
-
+'''Import sequence parameters (run getparams_waveforms_4Pulseq.m first)'''
+params = sio.loadmat('assets/params')['params']
+pyth_params = struct2python(params)
 """
 Testing mode
 """
@@ -31,34 +35,31 @@ test = True  # Create a sequence containing only a few time frames (for testing 
 """
 Gradient limits definition for maximum slew rate and maximum amplitude
 """
+sysSiemens = pyth_params['sysSiemens']
+gamma = sysSiemens['gamma'][0] # in Hz/T  %Determined from Pulseq - do not change
 
-gamma = 42576000  # in Hz/T  %Determined from Pulseq - do not change
-
-kwargs_for_opts = {'max_grad': 32, 'grad_unit': 'mT/m', 'max_slew': 130, 'slew_unit': 'T/m/s', 'grad_dead_time': 10e-6}
-system = Opts(max_grad=32, grad_unit='mT/m', max_slew=130, slew_unit='T/m/s', grad_raster_time=10e-6)
+system = Opts(max_grad=sysSiemens['max_grad'][0], grad_unit=sysSiemens['grad_unit'], max_slew=sysSiemens['max_slew'][0], slew_unit=sysSiemens['slew_unit'], grad_raster_time=sysSiemens['grad_raster_time'][0])
 seq = Sequence(system)
 
-"""
-Acquisition parameters definition
-Currently RF and gradients waveforms are imported from the TOPPE Matlab code version
 
-fov = 240e-3 # in-plane fov
-N = 72 # in-plane matrix size of reconstructed image
-Nz = 54 # number of reconstructed pixels along z. (Excitation is 14 cm, readout FOV in z is 54*3.33mm = 180mm) #TODO: Nz
-fovz = 180e-3 # fov along z
+'''Acquisition parameters definition'''
+
+fov = pyth_params['fov'][0]*1e-2 # in-plane fov in meters
+N = pyth_params['n'][0] # in-plane matrix size of reconstructed image
+Nz = pyth_params['nz'][0] # number of reconstructed pixels along z.
+fovz = pyth_params['fovz'][0]*1e-2 # fov along z in meters
 slice_thickness = fovz / Nz # reconstructed slice thickness
+TR = pyth_params['fmri']['TR'][0]
 
-n_shots = 3 # number of spiral rotations (leafs) for full k-space sampling
-alpha = 8 # oversampling factor
+n_shots = pyth_params['fmri']['nLeafs'][0] # number of spiral rotations (leafs) for full k-space sampling
+# alpha = 8 # oversampling factor
+
+
+rf_td_flip = pyth_params['rf']['flip'][0] * 180 / pi  # rad
+rf_fs_flip = pyth_params['fatsat']['flip'][0] * 180 / pi  # rad
+
 """
-
-Nz = 54
-n_shots = 3
-rf_td_flip = 10 * 180 / pi  # rad
-rf_fs_flip = 50 * 180 / pi  # rad
-
-"""
-Import the different RF and gradient waveforms
+Import the different RF and gradient waveforms (To generate them, run getparams_waveforms_4Pulseq.m first)
 RF waveforms are converted from [G] to [Hz] and interpolated for 1 microsecond raster time. 
 Gradient waveform are converted from [G/cm] to [Hz/m] and interpolated for 10 microseconds raster time
 All waveforms are also reshaped as (1,x) to fulfill the seq.add_block method requirements
@@ -68,9 +69,9 @@ All waveforms are also reshaped as (1,x) to fulfill the seq.add_block method req
 Read-out block: balanced stack-of-spirals  
 """
 # Import waveforms
-gx_ro_wav = sio.loadmat('TOPPE_waveforms/gx1_readout.mat')['gx1'] * gamma / 100  # from G/cm to Hz/m
-gy_ro_wav = sio.loadmat('TOPPE_waveforms/gy1_readout.mat')['gy1'] * gamma / 100
-gz_ro_wav = sio.loadmat('TOPPE_waveforms/gz1_readout.mat')['gz1'] * gamma / 100
+gx_ro_wav = sio.loadmat('assets/gx_readout.mat')['gx_readout'] * gamma / 100  # from G/cm to Hz/m
+gy_ro_wav = sio.loadmat('assets/gy_readout.mat')['gy_readout'] * gamma / 100
+gz_ro_wav = sio.loadmat('assets/gz_readout.mat')['gz_readout'] * gamma / 100
 
 # Interpolate and reshape
 gx_ro_wav_orig = grad_interpolate(gx_ro_wav, seq.grad_raster_time).reshape((1, -1))
@@ -78,16 +79,15 @@ gy_ro_wav_orig = grad_interpolate(gy_ro_wav, seq.grad_raster_time).reshape((1, -
 gz_ro_wav_orig = grad_interpolate(gz_ro_wav, seq.grad_raster_time).reshape((1, -1))
 
 # ADC
-# kwargs_for_adc = (num_samples=max(gx_ro_wav_orig.shape), dwell=system.grad_raster_time)
 adc = make_adc(num_samples=max(gx_ro_wav_orig.shape), dwell=system.grad_raster_time)
 
 """
 Slab-selective excitation (tip-down) + PRESTO spoiler gradients
 """
 # Import waveforms
-rf_td_wav = sio.loadmat('TOPPE_waveforms/rf_tipdown.mat')['rf'] * gamma / 10000  # from G to Hz
-gx_td_wav = sio.loadmat('TOPPE_waveforms/gx_tipdown.mat')['gx'] * gamma / 100  # from G/cm to Hz/m
-gz_td_wav = sio.loadmat('TOPPE_waveforms/gz_tipdown.mat')['gz'] * gamma / 100
+rf_td_wav = sio.loadmat('assets/rf_tipdown.mat')['rf_tipdown'] * gamma / 10000  # from G to Hz
+gx_td_wav = sio.loadmat('assets/gx_tipdown.mat')['gx_tipdown'] * gamma / 100  # from G/cm to Hz/m
+gz_td_wav = sio.loadmat('assets/gz_tipdown.mat')['gz_tipdown'] * gamma / 100
 
 #Interpolate and reshape
 rf_td_wav = rf_interpolate(rf_td_wav, seq.rf_raster_time).reshape((1, -1))
@@ -98,36 +98,36 @@ gz_td_wav = grad_interpolate(gz_td_wav, seq.grad_raster_time).reshape((1, -1))
 Fat saturation pulse
 """
 # Import waveforms
-rf_fs_wav = sio.loadmat('TOPPE_waveforms/rf_fatsat.mat')['rf'] * gamma / 10000  # from G to Hz
+rf_fs_wav = sio.loadmat('assets/rf_fatsat.mat')['rf_fatsat'] * gamma / 10000  # from G to Hz
 
 #Interpolate and reshape
 rf_fs_wav = rf_interpolate(rf_fs_wav, seq.rf_raster_time).reshape((1, -1))
 
 #Frequency offset to null fat signal
-fs_freq_offset = -440 # Hz
+fs_freq_offset = pyth_params['fatsat']['freq_offset'][0] # Hz
 
 """
 Sequence creation
 """
-nz_samp = 30  # kz points sampled per time-frame (undersampling factor 54/30 = 1.8)
-dur = 5 * 60  # total duration of the fMRI scan (sec)
+nz_samp = pyth_params['fmri']['nz_samp'][0]  # kz points sampled per time-frame (undersampling factor 54/30 = 1.8)
+dur = pyth_params['fmri']['dur'][0]  # total duration of the fMRI scan (sec)
 
 # Undersampling factors
 
 Rxy = 3
 Rz = Nz / nz_samp
 
-trVol = 2.9  # time for fully sampled image volume (sec) (approximate)
+trVol = pyth_params['fmri']['trVol'][0]  # time for fully sampled image volume (sec) (approximate)
 
 if test:
-    nt = 3 * 10
+    nt = pyth_params['fmri']['nt'][0]
 else:
     nt = 2 * round(Rxy * Rz * dur / trVol / 2)  # number of undersampled time-frames
 
 # fully sampled kz sampling pattern
-kzFull = []
-for i in range(1, Nz + 1):
-    kzFull.append(((i - 1 + 0.5) - Nz / 2) / (Nz / 2))  # scaling is (-1,1)
+kzFull = pyth_params['fmri']['kzFull']
+'''for i in range(1, Nz + 1):
+    kzFull.append(((i - 1 + 0.5) - Nz / 2) / (Nz / 2))  # scaling is (-1,1)'''
 
 # undersampled kz sampling pattern
 if 0:
@@ -135,24 +135,24 @@ if 0:
     # variable density (non-cartesian) kz undersampling. May be useful later
 else:
     # cartesian variable-density kz undersampling
-    zInd = sio.loadmat('TOPPE_waveforms/zInd.mat')['zInd']
+    zInd = sio.loadmat('GE/zInd.mat')['zInd']
     zInd = (zInd == 1).tolist()[0]
     kzU = list(compress(kzFull, zInd))
 
 ndisdaq = 0 # was 10 before
-nref = 4 * n_shots  # 4 is the number of fully sampled frames acquired at beginning
+nref = pyth_params['fmri']['nref'][0]   # 4 is the number of fully sampled frames acquired at beginning
 
 rfphs = 0  # rad
 rfphsLast = rfphs
 daqphs = 0
 rf_spoil_seed_cnt = 0
-rf_spoil_seed = 150  # % For 30 kz platters per frame and rf_spoil_seed=150, we have mod(nz_samp*rf_spoil_seed,360)=180 which is what we need for improved RF spoiling using our method in Magn Reson Med. 2016 Jun;75(6):2388-93. doi: 10.1002/mrm.25843.
+rf_spoil_seed = pyth_params['fmri']['rf_spoil_seed'][0]  # % For 30 kz platters per frame and rf_spoil_seed=150, we have mod(nz_samp*rf_spoil_seed,360)=180 which is what we need for improved RF spoiling using our method in Magn Reson Med. 2016 Jun;75(6):2388-93. doi: 10.1002/mrm.25843.
 
 # loop over undersampled time frames
 dabon = 1
 daboff = 0
 ktraj_full = []
-for iframe in range(-ndisdaq + 1, nref + 1):#range(-ndisdaq + 1, nref + nt + 1):
+for iframe in range(-ndisdaq + 1, nref + nt + 1):
     print(str(iframe + ndisdaq) + ' of ' + str(nt + ndisdaq + nref))
 
     # set kz sampling pattern for this frame
@@ -175,13 +175,13 @@ for iframe in range(-ndisdaq + 1, nref + 1):#range(-ndisdaq + 1, nref + nt + 1):
         # fat sat block
 
         # kwargs_for_arbRF = {'flip_angle': rf_fs_flip, 'system': system, 'signal': rf_fs_wav, 'freq_offset': fs_freq_offset, 'phase_offset': rfphs}
-        rf_fs, _ = make_arbitrary_rf(flip_angle= rf_fs_flip, system= system, signal= np.squeeze(rf_fs_wav), freq_offset= fs_freq_offset, phase_offset= rfphs)
+        rf_fs, _ = make_arbitrary_rf(flip_angle= rf_fs_flip, system= system, signal= np.squeeze(rf_fs_wav), freq_offset= fs_freq_offset, phase_offset= rfphs)#, time_bw_product=1.5)
 
         seq.add_block(rf_fs)
 
         # Slab excitation + PRESTO gradients block
         # kwargs_for_arbRF = {'flip_angle': rf_td_flip, 'system': system, 'signal': rf_td_wav, 'phase_offset': rfphs}
-        rf_td, _ = make_arbitrary_rf(flip_angle= rf_td_flip, system= system, signal= np.squeeze(rf_td_wav), phase_offset= rfphs)
+        rf_td, _ = make_arbitrary_rf(flip_angle= rf_td_flip, system= system, signal= np.squeeze(rf_td_wav), phase_offset= rfphs)#,time_bw_product=8)
 
         # kwargs_for_arbG = {'channel': 'x', 'system': system, 'waveform': gx_td_wav}
         gx_td = make_arbitrary_grad(channel= 'x', system= system, waveform= np.squeeze(gx_td_wav))
@@ -239,12 +239,15 @@ for iframe in range(-ndisdaq + 1, nref + 1):#range(-ndisdaq + 1, nref + nt + 1):
 
 
     ktraj_full.append(ktraj_frame)
-"""
+"""seq.plot( time_range=(0, 0.019))
 Plot the resulting sequence
 """
-seq.plot( time_range=(0, 0.019))
+
+seq.plot(time_range=(0, 1.2*TR))
+
+
 
 """
 Write the .seq file
 """
-seq.write("spiral_PRESTO.seq")
+seq.write('spiral_'+pyth_params['type']+'.seq')
