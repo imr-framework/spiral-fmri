@@ -1,12 +1,44 @@
 # spiral-fMRI
-This project presents a spiral-based functional Magnetic Resonance Imaging (fMRI) sequence. It allows dynamic T2* weighed contrast with a high temporal resolution and shorter total acquisition time. [[1]](#References) 
+This project presents a spiral-based functional Magnetic Resonance Imaging (fMRI) sequence. It allows dynamic T2* weighed contrast with a high temporal resolution and shorter total acquisition time [[1]](#References).
 
-This Pulseq[[2]](#References)[[3]](#References)  version is a "translation" of the original one based in TOPPE[[4]](#References) and it demonstrates the feasibility of porting sequences between these two open-source and vendor-independent frameworks. It has also been implemented in a cross-vendor manner.
+This Pulseq [[2]](#References)[[3]](#References)  version is a "translation" of the original one based in TOPPE [[4]](#References) and it demonstrates the feasibility of porting sequences between these two open-source and vendor-independent frameworks. It has also been implemented in a cross-vendor manner.
 
 Check the [Wiki](https://github.com/imr-framework/spiral-fmri/wiki) for more information.
 ## Dependencies
-## Demo
+1. PyPulseq>=1.2.1
+1. numpy>=1.16.3
+2. matplotlib>=3.0.3
+## Quick Demo
+**Please note:** You need to install Pulseq interpreter on your system before running any Pulseq sequence. Visit their [GitHub page](http://pulseq.github.io/) and [specifications](http://pulseq.github.io/specification.pdf) document for more information.
+1. Create the environment: 
+
+    After cloning the respository, create a virtual environment and install the specified [dependencies](#Dependencies).
+    
+    Go to [PyPulseq's GitHub page](https://github.com/imr-framework/pypulseq) to learn more about this tool for pulse sequence design.
+2. Open **getparams.py** and check the acquisition parameters
+
+    Note that the sequence implementation has been valited with the default parameters. A different combination of values would affect the resulting images. 
+    
+    Change the system limits if you need to. We have tested our implementation with these limits:
+    ```python
+    # system limits
+    gamma = 42576000 # Hz/T
+    sysSiemens = {'gamma': gamma, 'max_grad': 32, 'grad_unit': 'mT/m', 'max_slew': 130, 'slew_unit': 'T/m/s',
+                 'grad_raster_time': 10e-6, 'rf_raster_time': 1e-6}
+    ```
+    
+    For example, gradient and slew rate limits are not the same for GE and Siemens.
+    
+    ![GEvsSiemens system limits](/images/rf_g_limits.png)
+    
+3. Run **spiral_fmri_pypulseq.py**. It will give you the .seq file that will be played on the scanner.
+    ```Python
+    seq.write("spiral_PRESTO.seq")
+    ```
+4. Go to the MR room and play it!
+    
 ## Contributing and Community guidelines
+This repository adheres to a code of conduct adapted from the [Contributor Covenant](https://www.contributor-covenant.org/) code of conduct. Contributing guidelines can be found here.
 ## References
 1. van Gelderen, P., Duyn, J. H., Ramsey, N. F., Liu, G., & Moonen, C. T. (2012). The PRESTO technique for fMRI. NeuroImage, 62(2), 676–681. doi:10.1016/j.neuroimage.2012.01.017
 
@@ -15,28 +47,3 @@ Check the [Wiki](https://github.com/imr-framework/spiral-fmri/wiki) for more inf
 3. Layton, K. J., Kroboth, S., Jia, F., Littin, S., Yu, H., Leupold, J., Nielsen, J., Stöcker, T. and Zaitsev, M. (2017), Pulseq: A rapid and hardware‐independent pulse sequence prototyping framework. Magn. Reson. Med., 77: 1544-1552. doi:10.1002/mrm.26235
 
 4. Nielsen, J. F., & Noll, D. C. (2018). TOPPE: A framework for rapid prototyping of MR pulse sequences. Magnetic resonance in medicine, 79(6), 3128–3134. doi:10.1002/mrm.26990
-
-**Please note:** You need to install Pulseq interpreter on your system before running any Pulseq sequence. Visit their [GitHub page](http://pulseq.github.io/) for more information
-
-In **PRESTO_pulseq.py**:
-1. Change the system limits if you need to. We have tested our implementation with these limits:
-    ```python
-    gamma = 42576000  # in Hz/T  %Determined from Pulseq - do not change
-
-    kwargs_for_opts = {'max_grad': 32, 'grad_unit': 'mT/m', 'max_slew': 130, 'slew_unit': 'T/m/s', 'grad_dead_time': 10e-6}
-    system = Opts(kwargs_for_opts)
-    seq = Sequence(system)
-    ```
-    
-    For example, gradient and slew rate limits are not the same for GE and Siemens.
-    
-    ![GEvsSiemens system limits](/images/rf_g_limits.png)
-   
-   
-2. Run the code . It will give you the .seq file that will be played on the scanner.
-    ```Python
-    seq.write("spiral_PRESTO.seq")
-    ```
-3. Go to the MR room and play it!
-
-Check the [Wiki](https://github.com/imr-framework/spiral-fmri/wiki) for more information.
