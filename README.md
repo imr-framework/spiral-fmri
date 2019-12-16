@@ -1,7 +1,7 @@
 # spiral-fMRI
-This project presents a spiral-based functional Magnetic Resonance Imaging (fMRI) sequence. It allows dynamic T2* weighed contrast with a high temporal resolution and shorter total acquisition time. [1](#References) 
+This project presents a spiral-based functional Magnetic Resonance Imaging (fMRI) sequence. It allows dynamic T2* weighed contrast with a high temporal resolution and shorter total acquisition time. [[1]](#References) 
 
-This Pulseq[2][3] version is a "translation" of the original one based in TOPPE[4] and it demonstrates the feasibility of porting sequences between these two open-source and vendor-independent frameworks. It has also been implemented in a cross-vendor manner.
+This Pulseq[[2]](#References)[[3]](#References)  version is a "translation" of the original one based in TOPPE[[4]](#References) and it demonstrates the feasibility of porting sequences between these two open-source and vendor-independent frameworks. It has also been implemented in a cross-vendor manner.
 
 Check the [Wiki](https://github.com/imr-framework/spiral-fmri/wiki) for more information.
 ## Dependencies
