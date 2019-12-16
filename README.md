@@ -1,8 +1,13 @@
 # spiral-fMRI
-# Dependencies
-# Demo
-# Contributing and Community guidelines
-# References
+This project presents a spiral-based functional Magnetic Resonance Imaging (fMRI) sequence. It allows dynamic T2* weighed contrast with a high temporal resolution and shorter total acquisition time.5 
+
+This Pulseq version is a "translation" of the original one based in TOPPE and it demonstrates the feasibility of porting sequences between these two open-source and vendor-independent frameworks. It has also been implemented in a cross-vendor manner.
+
+Check the [Wiki](https://github.com/imr-framework/spiral-fmri/wiki) for more information.
+## Dependencies
+## Demo
+## Contributing and Community guidelines
+## References
 
 **Please note:** You need to install Pulseq interpreter on your system before running any Pulseq sequence. Visit their [GitHub page](http://pulseq.github.io/) for more information
 
