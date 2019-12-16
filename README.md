@@ -1,4 +1,8 @@
 # spiral-fMRI
+# Dependencies
+# Demo
+# Contributing and Community guidelines
+# References
 
 **Please note:** You need to install Pulseq interpreter on your system before running any Pulseq sequence. Visit their [GitHub page](http://pulseq.github.io/) for more information
 
