@@ -1,4 +1,4 @@
-# spiral-fMRI
+<h1 align="center"> Spiral fMRI </h1> <br>
 This project presents a spiral-based functional Magnetic Resonance Imaging (fMRI) sequence. It allows dynamic T2* weighed contrast with a high temporal resolution and shorter total acquisition time [[1]](#References).
 
 This Pulseq [[2]](#References)[[3]](#References)  version is a "translation" of the original one based in TOPPE [[4]](#References) and it demonstrates the feasibility of porting sequences between these two open-source and vendor-independent frameworks. It has also been implemented in a cross-vendor manner.
@@ -12,7 +12,20 @@ Check the [Wiki](https://github.com/imr-framework/spiral-fmri/wiki) for more inf
 **Please note:** You need to install Pulseq interpreter on your system before running any Pulseq sequence. Visit their [GitHub page](http://pulseq.github.io/) and [specifications](http://pulseq.github.io/specification.pdf) document for more information.
 1. Create the environment: 
 
-    After cloning the respository, create a virtual environment and install the specified [dependencies](#Dependencies).
+    After cloning the respository, create a virtual environment, activate it and install the specified [dependencies](#Dependencies).
+     ```python
+    # Windows
+    py -m pip install --user virtualenv # install vitual environment package
+    py -m venv <virtual_environment_name> # create a virtual environment in the project directory
+    .\<virtual_environment_name>\Scripts\activate # activate it
+    pip install -r requirements.txt # install the required packages
+    
+    # Mac/Linux
+    python3 -m pip install --user virtualenv 
+    python3 -m venv <virtual_environment_name> 
+    source <virtual_environment_name>/bin/activate 
+    pip install -r requirements.txt 
+    ```
     
     Go to [PyPulseq's GitHub page](https://github.com/imr-framework/pypulseq) to learn more about this tool for pulse sequence design.
 2. Open **getparams.py** and check the acquisition parameters
