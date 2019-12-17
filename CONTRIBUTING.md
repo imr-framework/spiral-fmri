@@ -1,6 +1,6 @@
-# Contributing to `spiral-fMRI`
+# Contributing to `spiral-fmri`
 
-Here are guidelines (not rules!) for contributing to `spiral-fMRI`. Use your best judgment, and feel free to propose 
+Here are guidelines (not rules!) for contributing to `spiral-fmri`. Use your best judgment, and feel free to propose 
 changes to this document in a pull request.
 
 ## Table of contents
@@ -9,7 +9,7 @@ changes to this document in a pull request.
 
 ## Code of Conduct
 This project and everyone participating in it is governed by the 
-[`pypulseq` Code of Conduct](code_of_conduct). 
+[`spiral-fmri` Code of Conduct](code_of_conduct). 
 By participating, you are expected to uphold this code. Please report unacceptable behavior to 
 [imr.framework2018@gmail.com](email).
 
