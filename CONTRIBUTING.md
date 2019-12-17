@@ -9,7 +9,7 @@ changes to this document in a pull request.
 
 ## Code of Conduct
 This project and everyone participating in it is governed by the 
-[`spiral-fmri` Code of Conduct](ref_coc). 
+[`spiral-fmri` Code of Conduct](https://github.com/imr-framework/spiral-fmri/blob/master/CODE_OF_CONDUCT.md). 
 By participating, you are expected to uphold this code. Please report unacceptable behavior to 
 [imr.framework2018@gmail.com](email).
 
@@ -23,7 +23,7 @@ Please adhere to the appropriate templates when reporting bugs or requesting fea
 presented via Github's 'New Issue' feature.
 
 [email]: mailto:imr.framework2018@gmail.com
-[ref_coc]: https://github.com/imr-framework/spiral-fmri/blob/master/CODE_OF_CONDUCT.md
+[code_of_conduct]: https://github.com/imr-framework/spiral-fmri/blob/master/CODE_OF_CONDUCT.md
 [style_guide]: https://www.python.org/dev/peps/pep-0008/
 [numpy1]: https://numpydoc.readthedocs.io/en/latest/format.html
 [numpy2]: https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_numpy.html
