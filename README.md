@@ -52,7 +52,7 @@ Check the [Wiki](https://github.com/imr-framework/spiral-fmri/wiki) for more inf
 4. Go to the MR room and play it!
     
 ## Contributing and Community guidelines
-This repository adheres to a code of conduct adapted from the [Contributor Covenant](https://www.contributor-covenant.org/) code of conduct. Contributing guidelines can be found here.
+This repository adheres to a code of conduct adapted from the [Contributor Covenant](https://www.contributor-covenant.org/) code of conduct. Contributing guidelines can be found [here](https://github.com/imr-framework/spiral-fmri/blob/master/CONTRIBUTING.md)
 ## References
 1. van Gelderen, P., Duyn, J. H., Ramsey, N. F., Liu, G., & Moonen, C. T. (2012). The PRESTO technique for fMRI. NeuroImage, 62(2), 676–681. doi:10.1016/j.neuroimage.2012.01.017
 
