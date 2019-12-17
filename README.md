@@ -16,7 +16,7 @@ Check the [Wiki](https://github.com/imr-framework/spiral-fmri/wiki) for more inf
     After cloning the respository, create a virtual environment, activate it and install the specified [dependencies](#Dependencies).
      ```code
     # Windows
-    py -m pip install <ul><ul>user virtualenv # install vitual environment package
+    py -m pip install --user virtualenv # install vitual environment package
     py -m venv <virtual_environment_name> # create a virtual environment in the project directory
     .\<virtual_environment_name>\Scripts\activate # activate it
     pip install -r requirements.txt # install the required packages
