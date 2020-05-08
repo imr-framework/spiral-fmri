@@ -15,7 +15,7 @@ from pypulseq.make_arbitrary_grad import make_arbitrary_grad
 # Import own methods
 from getparams import getparams
 from g2k import g2k
-from genspivd2 import genspiralvd
+#from genspivd2 import genspiralvd
 from interpolation import grad_interpolate
 from interpolation import rf_interpolate
 from archimedian import archimedian_spiral

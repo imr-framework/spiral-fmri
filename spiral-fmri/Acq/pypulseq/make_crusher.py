@@ -1,5 +1,5 @@
-from Acq.trapwave2 import trapwave2
-from Acq.makeSystemlength import makeSystemlength
+from trapwave2 import trapwave2
+from makeSystemlength import makeSystemlength
 
 import numpy as np
 

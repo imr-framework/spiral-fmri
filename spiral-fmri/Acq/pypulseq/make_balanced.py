@@ -1,6 +1,6 @@
 import numpy as np
 
-from Acq.trapwave2 import trapwave2
+from trapwave2 import trapwave2
 
 def make_balanced(g, max_grad, max_slew, system):
     '''
