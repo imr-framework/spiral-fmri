@@ -20,25 +20,26 @@ seq.type = 'presto';   % 'spgr' or 'presto'
 % 'maxSlew' can always be a design choice, i.e., it can be at or below the physical system limit.
 % Here we will therefore use 'sys' when DESIGNING waveforms, and 'sysGE' when WRITING them to .mod files with writemod.m.
 mxs = 13.0;    % max slew [G/cm/msec]. Go easy to minimize PNS.
-seq.sys = toppe.systemspecs('maxSlew', mxs, 'slewUnit', 'Gauss/cm/ms', 'maxGrad', 3.1, 'gradUnit', 'Gauss/cm');  % used in design of waveforms
+seq.sys = toppe.systemspecs('maxSlew', mxs, 'slewUnit', 'Gauss/cm/ms', 'maxGrad', 3.2, 'gradUnit', 'Gauss/cm');  % used in design of waveforms
 seq.sysGE = toppe.systemspecs('maxSlew', mxs, 'slewUnit', 'Gauss/cm/ms', 'maxGrad', 5, 'gradUnit', 'Gauss/cm');  % needed in writemod() calls only 
 
 % Create modules.txt (common to both B0 and fMRI sequence)
 % Entries are tab-separated.
 modFileText = ['' ...
 'Total number of unique cores\n' ...
-'2\n' ...
+'3\n' ...
 'fname	duration(us)	hasRF?	hasDAQ?\n' ...
 'readout.mod	0	0	1\n' ...
+'fatsat.mod     0	1	0\n' ...
 'tipdown.mod	0	1	0' ];
 fid = fopen('modules.txt', 'wt');
 fprintf(fid, modFileText);
 fclose(fid);
 
 % FOV and resolution
-seq.n = 74;                     % in-plane matrix size of reconstructed image
-seq.fov = 22;                   % in-plane fov (cm)
-seq.nz = 30;                    % number of reconstructed pixels along z
+seq.n = 72; %74;                     % in-plane matrix size of reconstructed image
+seq.fov = 24; %22;                   % in-plane fov (cm)
+seq.nz = 54; %30;                    % number of reconstructed pixels along z
 seq.fovz = round(seq.nz*(seq.fov/seq.n));    % fov along z (cm)
 seq.dz = seq.fovz/seq.nz;       % reconstructed slice thickness (cm)
 seq.dx = seq.fov/seq.n;         % in-plane voxel dimension (cm)
@@ -62,12 +63,12 @@ seq.fatsat.dur = 3;            % pulse duration (msec)
 % Value of about 1.0-1.5 Gives near-optimal temporal SNR for PRESTO fMRI (see one of my ISMRM abstracts, 2017 I think) 
 seq.fmri.nCyclesSpoil = 1;   
 
-seq.fmri.nz_samp = 30;             % Sample this many kz points per time-frame (undersampling factor in kz is 54/30 = 1.8)
+seq.fmri.nz_samp = 54; % 30;             % Sample this many kz points per time-frame (undersampling factor in kz is 54/30 = 1.8)
 seq.fmri.TR = 16.7e-3;             % approximate sequence TR (sec). See toppe.getTRtime()
 seq.fmri.dur = 5*60;               % total duration of fMRI scan (sec)
 seq.fmri.trVol = seq.fmri.nz_samp*seq.fmri.TR;    % time to acquire one under-sampled image volume (sec)
 if test
-	seq.fmri.nt = 30;
+	seq.fmri.nt = 0; %30
 else
 	seq.fmri.nt = 2*round(seq.fmri.dur/seq.fmri.trVol/2);      % number of (undersampled) time-frames
 end
@@ -94,7 +95,7 @@ else
 	%seq.fmri.kzU = seq.fmri.kzFull(logical(zInd));
 end
 
-seq.fmri.nref = 4;    % number of fully sampled frames acquired at beginning (for, e.g., GRAPPA calibration)
+seq.fmri.nref = 7;    % number of fully sampled frames acquired at beginning (for, e.g., GRAPPA calibration)
 
 seq.fmri.nframes = seq.fmri.nref*seq.fmri.nLeafs + seq.fmri.nt;   % total number of frames
 
@@ -105,7 +106,7 @@ seq.fmri.rf_spoil_seed = 150;
 
 %% B0 mapping sequence parameters
 seq.b0.nCyclesSpoil = 1.5;   % SPGR spoiler gradient size
-seq.b0.rf_spoil_seed = 117;  
+seq.b0.rf_spoil_seed = 150; %117;  
 seq.b0.tdelay = 5;           % (msec) Slow down scan a bit to improve SNR and reduce artifacts from imperfect spoiling.
 
 return;

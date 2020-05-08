@@ -12,8 +12,7 @@ function main(seq)
 %% fat saturation module
 % bw = 500 Hz. Frequency offset (-440 Hz) is set in scanloop.txt.
 slThick = 1000;     % dummy value (determines slice-select gradient, but we won't use it). Just needs to be large to reduce dead time before+after rf pulse.
-toppe.utils.rf.makeslr(seq.fatsat.flip, slThick, seq.fatsat.tbw, seq.fatsat.dur, 0, ...
-                       'ftype', 'ls', 'ofname', 'fatsat.mod', 'system', seq.sysGE);
+rf_fs = toppe.utils.rf.makeslr(seq.fatsat.flip, slThick, seq.fatsat.tbw, seq.fatsat.dur, 0,'ftype', 'ls', 'ofname', 'fatsat.mod', 'system', seq.sysGE);
 
 %% slab-selective excitation module (tipdown.mod). Include (PRESTO) spoiler gradients.
 
@@ -52,13 +51,12 @@ toppe.writemod('rf', rf, 'gx', gx, 'gy', gy, 'gz', gz, 'ofname', 'tipdown.mod', 
 Router = seq.fmri.nLeafs;
 fovvd  = seq.fov;
 xresvd = seq.n;
-[g] = toppe.utils.spiral.genspivd2(fovvd, xresvd, Router, ...
-	0.99*seq.sys.maxGrad, 0.99*seq.sys.maxSlew*10, seq.fmri.dsamp);
-g = [0; 0; g(:)];           % add a couple of zeroes to make sure k=0 is sampled (?)
+%[g] = toppe.utils.spiral.genspivd2(fovvd, xresvd, Router, 0.99*seq.sys.maxGrad, 0.99*seq.sys.maxSlew*10, seq.fmri.dsamp);
+%g = [0; 0; g(:)];           % add a couple of zeroes to make sure k=0 is sampled (?)
 
-%rmax = seq.n/(2*seq.fov);           % max k-space radius
-%[~,g] = toppe.utils.spiral.mintgrad.vds(0.99*seq.sys.maxSlew*1e3, 0.99*seq.sys.maxGrad, seq.sys.raster, seq.fmri.nLeafs, seq.fov, 0, 0, rmax);   % vds returns complex k, g
-%g = [0; 0; g(:)];           % add a couple of zeroes to make sure k=0 is sampled
+rmax = seq.n/(2*seq.fov);           % max k-space radius
+[k,g,s,t] = toppe.utils.spiral.mintgrad.vds(0.99*seq.sys.maxSlew*1e3, 0.99*seq.sys.maxGrad, 4e-6, seq.fmri.nLeafs, seq.fov, 0, 0, rmax);   % vds returns complex k, g
+g = [0; 0; g(:)];           % add a couple of zeroes to make sure k=0 is sampled
 
 % make balanced and same length
 gx = toppe.utils.makebalanced(real(g(:)), 'maxSlew', seq.sys.maxSlew/sqrt(2), 'maxGrad', seq.sys.maxGrad);
@@ -83,8 +81,8 @@ gz1 = [  gpe(:); zeros(2,1); 0*gx(:);  -gpe(:)];
 gx1 = toppe.utils.makeGElength(gx1);
 gy1 = toppe.utils.makeGElength(gy1);
 gz1 = toppe.utils.makeGElength(gz1);
-toppe.writemod('gx', gx1, 'gy', gy1, 'gz', gz1, 'ofname', 'readout.mod', ...
-               'desc', 'stack-of-spirals readout module', 'system', seq.sysGE);
+%toppe.writemod('gx', gx1, 'gy', gy1, 'gz', gz1, 'ofname', 'readout.mod', ...
+  %             'desc', 'stack-of-spirals readout module', 'system', seq.sysGE);
 
 %% Create scanloop.txt
 
@@ -107,7 +105,7 @@ if seq.fmri.writeKspace
 end
 
 fprintf('Writing scanloop.txt for fMRI sequence\n');
-toppe.write2loop('setup', 'version', 3);
+toppe.write2loop('setup')% 'version', 3);
 for iframe = 1:seq.fmri.nframes
 	if ~mod(iframe,10) & iframe > 0
 		fprintf([repmat('\b',1,20) sprintf('%d of %d', iframe, seq.fmri.nframes)]);
@@ -130,7 +128,7 @@ for iframe = 1:seq.fmri.nframes
 
 	for iz = 1:numel(kz1)
    	% fat sat
-   	% toppe.write2loop('fatsat.mod', 'RFphase', rfphs, 'Gamplitude', [0 0 0]');
+    toppe.write2loop('fatsat.mod', 'RFphase', rfphs, 'Gamplitude', [0 0 0]');
 
    	% rf excitation (and PRESTO gradients)
    	toppe.write2loop('tipdown.mod', 'RFphase', rfphs);
@@ -152,8 +150,8 @@ for iframe = 1:seq.fmri.nframes
 			daqphs = rfphsLast;
 		else
 			daqphs = rfphs;
-		end
-   	toppe.write2loop('readout.mod', 'DAQphase', daqphs, 'slice', slice, 'echo', echo, ...
+        end
+       	toppe.write2loop('readout.mod', 'DAQphase', daqphs, 'slice', slice, 'echo', echo, ...
 			'view', view, 'Gamplitude', [1 1 kz1(iz)]', 'dabmode', dabmode, 'rot', phi);
 
 	   % update rf phase (RF spoiling)
@@ -176,6 +174,7 @@ end
 fprintf('\n');
 toppe.write2loop('finish');
 
+toppe.plotseq(0,1.2*seq.fmri.TR)
 fprintf('fMRI volume TR: %.1f ms\n', toppe.getTRtime(1,2)*1e3*seq.fmri.nz_samp);
 fprintf('fMRI sequence duration: %dm %ds\n', floor(toppe.getscantime/60), round(60*rem(toppe.getscantime/60,1)));
 
@@ -211,7 +210,7 @@ cd tar
 ge2seq('scan.tar');
 seq = mr.Sequence();
 seq.read('out.seq');
-seq.plot_sg('TimeRange', [10 10.05]);
+seq.plot_sg('TimeRange', [0 1.2*TR]);
 cd ..
 end
 
