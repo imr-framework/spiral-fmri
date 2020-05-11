@@ -82,23 +82,25 @@ def archimedian_spiral(smax, gmax, T, N, FOV, rmax):
         r[count] = r0
         time[count] = t
 
-    r = r[np.arange(int(oversamp / 2), count + oversamp, oversamp)]
-    theta = theta[np.arange(int(oversamp / 2), count + oversamp, oversamp)]
-    time = time[np.arange(int(oversamp / 2), count + oversamp, oversamp)]
+    r = r[np.arange(int(oversamp / 2)-1, count + 1, oversamp)]
+    # r = r[np.arange(int(oversamp / 2), count + oversamp, oversamp)]
+    theta = theta[np.arange(int(oversamp / 2) - 1, count + 1, oversamp)]
+    time = time[np.arange(int(oversamp / 2) - 1, count + 1, oversamp)]
 
     ltheta = 4 * math.floor(len(theta) / 4)
-    r = r[:ltheta + 1]
-    theta = theta[:ltheta + 1]
-    time = time[:ltheta + 1]
+    r = r[:ltheta]
+    # r = r[:ltheta + 1]
+    theta = theta[:ltheta]
+    time = time[:ltheta]
 
     k = r * np.exp(1j * theta)
 
     g = (np.hstack((k, 0)) - np.hstack((0, k))) / T
     # 1 / gamma * (np.hstack((k, 0)) - np.hstack((0, k))) / T
-    g = g[:len(k)-1]
+    g = g[:len(k)]
 
     s = (np.hstack((g,0)) - np.hstack((0,g))) / T
-    s = s[:len(k)-1]
+    s = s[:len(k)]
 
     return k, g #, s, time, r, theta
 

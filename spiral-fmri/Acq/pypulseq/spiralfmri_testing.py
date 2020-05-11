@@ -3,11 +3,13 @@
 '''
 Testing for spiral-fMRI repository
 Author: Marina Manso Jimeno
-Last Updated: 05/08/2020
+Last Updated: 05/11/2020
 '''
 
 import unittest
 import numpy as np
+import scipy.io as sio
+import math
 import matplotlib.pyplot as plt
 
 from Acq.make_slr_rf import make_slr_rf
@@ -26,7 +28,7 @@ system = {'gamma': 42576000, 'max_grad': 32, 'grad_unit': 'mT/m', 'max_slew': 13
 class testMakeSLRPulse(unittest.TestCase):
 
     def test_flip_angle_range(self):
-        with self.assertRaises(ValueError): make_slr_rf(flip_angle=-10,slice_thickness=10,time_bw_product=1.5,duration=1e-3,ncycles=0,system=system,freq_offset=0)
+        with self.assertRaises(ValueError): make_slr_rf(flip_angle=-10,slice_thickness=10,time_bw_product=1.5,duration=1e-3,ncycles=0,system=system)
         with self.assertRaises(ValueError): make_slr_rf(flip_angle=500, slice_thickness=10, time_bw_product=1.5,
                                                   duration=1e-3, ncycles=0, system=system)
 
@@ -78,6 +80,15 @@ class testMakeSLRPulse(unittest.TestCase):
         sl_thick_out = tbwp / dur / gplat
         self.assertEqual(sl_thick_in, np.round(sl_thick_out,3))
 
+    def test_makeslrpulse_matlabvspython(self):
+        rf_mat = sio.loadmat('testing_assets/rf_slr.mat')['rf'] * system['gamma'] / 10000  # from G to Hz
+        gss_mat = sio.loadmat('testing_assets/gss_slr.mat')['gex'] * system['gamma'] / 100 # from G/cm to Hz/m
+        systemmat = {'gamma': 42576000, 'max_grad': 32, 'grad_unit': 'mT/m', 'max_slew': 130, 'slew_unit': 'T/m/s',
+                     'grad_raster_time': 4e-6, 'rf_raster_time': 4e-6}
+        rf_pyth, gss_pyth = make_slr_rf(flip_angle=10, slice_thickness=0.144, time_bw_product=8, duration=1e-3, ncycles=0, system=systemmat)
+        self.assertAlmostEqual(rf_mat.all(),rf_pyth.all())
+        self.assertEqual(gss_mat.all(),gss_pyth.all())
+
 class testTrap2Wave(unittest.TestCase):
     def test_area_val(self):
         with self.assertRaises(ValueError): trapwave2(area=0,mxg=system['max_grad'],mxs=system['max_slew'],rasterTime=system['grad_raster_time'])
@@ -122,6 +133,12 @@ class testMakeCrusher(unittest.TestCase):
         with self.assertRaises(ValueError): make_crusher(ncycles=1, opslthick=1e-3, gzarea=0,
                                                          max_grad=system['max_grad'], max_slew=system['max_slew'],
                                                 sys_lims=sys_lims)
+    def test_makecrusher_matlabvspython(self):
+        gcrush_mat = sio.loadmat('testing_assets/gcrusher.mat')['gspoil1'] * system['gamma'] / 100 # G/cm to Hz/m
+        systemmat = {'gamma': 42576000, 'max_grad': 32, 'grad_unit': 'mT/m', 'max_slew': 130, 'slew_unit': 'T/m/s',
+                     'grad_raster_time': 4e-6, 'rf_raster_time': 4e-6}
+        gcrush_pyth = make_crusher(ncycles=1, opslthick=0.3333e-2, gzarea=0, max_grad=32, max_slew=0.9*130/math.sqrt(2),sys_lims=systemmat)
+        self.assertEqual(gcrush_mat.all(), gcrush_pyth.all())
 
 class testMakeSystemLength(unittest.TestCase):
     def test_rater_val(self):
@@ -213,6 +230,11 @@ class testArchimedianSpiral(unittest.TestCase):
         with self.assertRaises(ValueError): archimedian_spiral(smax=system['max_slew'], gmax=system['max_grad'], T=system['grad_raster_time'],
                                         N=3, FOV=-0.10, rmax=150)
 
+    def test_archspiral_matlabvspython(self):
+        g_mat = sio.loadmat('testing_assets/arch_spiral.mat')['g'] * system['gamma'] / 100  # from G/cm to Hz/m
+        _, g_pyth = archimedian_spiral(smax=0.99 * 130, gmax=0.99 * 32, T=4e-6, N=3, FOV=0.24, rmax=150)
+        self.assertEqual(g_mat.all(),g_pyth.all())
+
 class testMakeBalanced(unittest.TestCase):
     def test_g_shape(self):
         with self.assertRaises(ValueError): make_balanced(np.ones((4,500)), system['max_grad'], system['max_slew'], system)
@@ -231,5 +253,13 @@ class testMakeBalanced(unittest.TestCase):
     def test_g_allzeros(self):
         with self.assertRaises(ValueError): make_balanced(g=np.zeros((50,1)), max_grad=system['max_grad'], max_slew=system['max_slew'], system=system)
 
+    def test_makebalanced_matlabvspython(self):
+        gbal_mat = sio.loadmat('testing_assets/arch_spiral_gxbalanced.mat')['gx'] * system['gamma'] / 100  # from G/cm to Hz/m
+        _, g_pyth = archimedian_spiral(smax=0.99 * 130, gmax=0.99 * 32, T=4e-6, N=3, FOV=0.24, rmax=150)
+        gx = np.real(np.vstack((0,0,g_pyth.reshape(len(g_pyth),1))))
+        systemmat = {'gamma': 42576000, 'max_grad': 32, 'grad_unit': 'mT/m', 'max_slew': 130, 'slew_unit': 'T/m/s',
+                 'grad_raster_time': 4e-6}
+        gbal_pyth = make_balanced(g=gx, max_grad=32, max_slew=130/math.sqrt(2), system=systemmat)
+        self.assertEqual(gbal_mat.all(),gbal_pyth.all())
 if __name__ == "__main__":
     unittest.main()
