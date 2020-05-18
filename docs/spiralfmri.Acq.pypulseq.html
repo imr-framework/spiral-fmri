@@ -1,0 +1,552 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Pypulseq version &#8212; spiral-fmri  documentation</title>
+    <link rel="stylesheet" href="_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/language_data.js"></script>
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Reconstruction" href="spiralfmri.Recon.html" />
+    <link rel="prev" title="Acquisition" href="spiralfmri.Acq.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="spiralfmri.Recon.html" title="Reconstruction"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="spiralfmri.Acq.html" title="Acquisition"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">spiral-fmri  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="modules.html" >Modules</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="spiralfmri.html" >Spiral fMRI package</a> &#187;</li>
+          <li class="nav-item nav-item-3"><a href="spiralfmri.Acq.html" accesskey="U">Acquisition</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="pypulseq-version">
+<h1>Pypulseq version<a class="headerlink" href="#pypulseq-version" title="Permalink to this headline">¶</a></h1>
+<p>Methods to create a sequence file usign pypulseq</p>
+<div class="section" id="module-spiralfmri.Acq.pypulseq.archimedian">
+<span id="spiralfmri-acq-pypulseq-archimedian"></span><h2>spiralfmri.Acq.pypulseq.archimedian<a class="headerlink" href="#module-spiralfmri.Acq.pypulseq.archimedian" title="Permalink to this headline">¶</a></h2>
+<dl class="py function">
+<dt id="spiralfmri.Acq.pypulseq.archimedian.archimedian_spiral">
+<code class="sig-prename descclassname">spiralfmri.Acq.pypulseq.archimedian.</code><code class="sig-name descname">archimedian_spiral</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">smax</span></em>, <em class="sig-param"><span class="n">gmax</span></em>, <em class="sig-param"><span class="n">T</span></em>, <em class="sig-param"><span class="n">N</span></em>, <em class="sig-param"><span class="n">FOV</span></em>, <em class="sig-param"><span class="n">rmax</span></em><span class="sig-paren">)</span><a class="headerlink" href="#spiralfmri.Acq.pypulseq.archimedian.archimedian_spiral" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a variable density spiral waveform with trajectory
+k(t) = r(t) exp(i*q(t))
+Where q is the same as theta, r and q are chosen to satisfy:
+1) Maximum gradient amplitudes and slew rates.
+2) Maximum gradient due to FOV, where FOV can vary with k-space radius r, as
+FOV(r) = F0 + F1*r + F2*r*r</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>smax</strong> (<em>float</em>) – Maximum slew rate in mT/m</p></li>
+<li><p><strong>gmax</strong> (<em>float</em>) – Maximum gradient it T/m/s</p></li>
+<li><p><strong>T</strong> (<em>float</em>) – Gradient raster time in seconds</p></li>
+<li><p><strong>N</strong> (<em>int</em>) – Number of spiral shots</p></li>
+<li><p><strong>FOV</strong> – FOV coefficient with respect to r in meters</p></li>
+<li><p><strong>rmax</strong> (<em>float</em>) – Maximum k-space radius in 1/m</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>k</strong> (<em>numpy.ndarray</em>) – K-space trajectory (kx + iky) in 1/m</p></li>
+<li><p><strong>g</strong> (<em>numpy.ndarray</em>) – Gradient waveform (Gx + iGy) in Hz/m</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="spiralfmri.Acq.pypulseq.archimedian.q2r21">
+<code class="sig-prename descclassname">spiralfmri.Acq.pypulseq.archimedian.</code><code class="sig-name descname">q2r21</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">smax</span></em>, <em class="sig-param"><span class="n">gmax</span></em>, <em class="sig-param"><span class="n">r</span></em>, <em class="sig-param"><span class="n">r1</span></em>, <em class="sig-param"><span class="n">T</span></em>, <em class="sig-param"><span class="n">Ts</span></em>, <em class="sig-param"><span class="n">N</span></em>, <em class="sig-param"><span class="n">Fcoeff</span></em><span class="sig-paren">)</span><a class="headerlink" href="#spiralfmri.Acq.pypulseq.archimedian.q2r21" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="spiralfmri.Acq.pypulseq.archimedian.qdf">
+<code class="sig-prename descclassname">spiralfmri.Acq.pypulseq.archimedian.</code><code class="sig-name descname">qdf</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">a</span></em>, <em class="sig-param"><span class="n">b</span></em>, <em class="sig-param"><span class="n">c</span></em><span class="sig-paren">)</span><a class="headerlink" href="#spiralfmri.Acq.pypulseq.archimedian.qdf" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-spiralfmri.Acq.pypulseq.g2k">
+<span id="spiralfmri-acq-pypulseq-g2k"></span><h2>spiralfmri.Acq.pypulseq.g2k<a class="headerlink" href="#module-spiralfmri.Acq.pypulseq.g2k" title="Permalink to this headline">¶</a></h2>
+<p>Author: Marina Manso Jimeno
+Last Updated: 07/11/2019</p>
+<dl class="py function">
+<dt id="spiralfmri.Acq.pypulseq.g2k.g2k">
+<code class="sig-prename descclassname">spiralfmri.Acq.pypulseq.g2k.</code><code class="sig-name descname">g2k</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">gx</span></em>, <em class="sig-param"><span class="n">gy</span></em>, <em class="sig-param"><span class="n">gz</span></em><span class="sig-paren">)</span><a class="headerlink" href="#spiralfmri.Acq.pypulseq.g2k.g2k" title="Permalink to this definition">¶</a></dt>
+<dd><p>Transforms from gradient to k-space trajectory</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>gx</strong> (<em>numpy.ndarray</em>) – Gradient waveform along the x-axis</p></li>
+<li><p><strong>gy</strong> (<em>numpy.ndarray</em>) – Gradient waveform along the y-axis</p></li>
+<li><p><strong>gz</strong> (<em>numpy.ndarray</em>) – Gradient waveform along the z-axis</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>kx</strong> (<em>numpy.ndarray</em>) – k-space trajectory along the x-axis</p></li>
+<li><p><strong>ky</strong> (<em>numpy.ndarray</em>) – k-space trajectory along the x-axis</p></li>
+<li><p><strong>kz</strong> (<em>numpy.ndarray</em>) – k-space trajectory along the x-axis</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="module-spiralfmri.Acq.pypulseq.getparams">
+<span id="spiralfmri-acq-pypulseq-getparams"></span><h2>spiralfmri.Acq.pypulseq.getparams<a class="headerlink" href="#module-spiralfmri.Acq.pypulseq.getparams" title="Permalink to this headline">¶</a></h2>
+<dl class="py function">
+<dt id="spiralfmri.Acq.pypulseq.getparams.getparams">
+<code class="sig-prename descclassname">spiralfmri.Acq.pypulseq.getparams.</code><code class="sig-name descname">getparams</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#spiralfmri.Acq.pypulseq.getparams.getparams" title="Permalink to this definition">¶</a></dt>
+<dd><p>Acquisition parameters for 3D stack-of-spirals fMRI scan</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><strong>params</strong> – Dictionary containing the acquisition and specific sequence parameters</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="module-spiralfmri.Acq.pypulseq.interpolation">
+<span id="spiralfmri-acq-pypulseq-interpolation"></span><h2>spiralfmri.Acq.pypulseq.interpolation<a class="headerlink" href="#module-spiralfmri.Acq.pypulseq.interpolation" title="Permalink to this headline">¶</a></h2>
+<p>Author: Marina Manso Jimeno
+Last Updated: 05/06/2020</p>
+<dl class="py function">
+<dt id="spiralfmri.Acq.pypulseq.interpolation.grad_interpolate">
+<code class="sig-prename descclassname">spiralfmri.Acq.pypulseq.interpolation.</code><code class="sig-name descname">grad_interpolate</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">grad_signal</span></em>, <em class="sig-param"><span class="n">grad_raster_time</span><span class="o">=</span><span class="default_value">1e-05</span></em><span class="sig-paren">)</span><a class="headerlink" href="#spiralfmri.Acq.pypulseq.interpolation.grad_interpolate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gradient waveform interpolation to meet raster time requirements</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>grad_signal</strong> (<em>numpy.ndarray</em>) – Gradient signal with raster time 4 microseconds</p></li>
+<li><p><strong>grad_raster_time</strong> (<em>float</em>) – Raster time for interpolation. Default is 10 microseconds</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>grad_out</strong> – Interpolated gradient waveform with new raster time</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>numpy.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="spiralfmri.Acq.pypulseq.interpolation.rf_interpolate">
+<code class="sig-prename descclassname">spiralfmri.Acq.pypulseq.interpolation.</code><code class="sig-name descname">rf_interpolate</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">rf_signal</span></em>, <em class="sig-param"><span class="n">rf_raster_time</span><span class="o">=</span><span class="default_value">1e-06</span></em><span class="sig-paren">)</span><a class="headerlink" href="#spiralfmri.Acq.pypulseq.interpolation.rf_interpolate" title="Permalink to this definition">¶</a></dt>
+<dd><p>RF waveform interpolation to meet raster time requirements</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>rf_signal</strong> (<em>numpy.ndarray</em>) – RF signal with raster time 4 microseconds</p></li>
+<li><p><strong>rf_raster_time</strong> (<em>float</em>) – Raster time for interpolation. Defalult is 1 microsecond</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>rf_out</strong> – Interpolated RF waveform with new raster time</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>numpy.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="module-spiralfmri.Acq.pypulseq.makeSystemlength">
+<span id="spiralfmri-acq-pypulseq-makesystemlength"></span><h2>spiralfmri.Acq.pypulseq.makeSystemlength<a class="headerlink" href="#module-spiralfmri.Acq.pypulseq.makeSystemlength" title="Permalink to this headline">¶</a></h2>
+<dl class="py function">
+<dt id="spiralfmri.Acq.pypulseq.makeSystemlength.makeSystemlength">
+<code class="sig-prename descclassname">spiralfmri.Acq.pypulseq.makeSystemlength.</code><code class="sig-name descname">makeSystemlength</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">g</span></em>, <em class="sig-param"><span class="n">raster</span></em><span class="sig-paren">)</span><a class="headerlink" href="#spiralfmri.Acq.pypulseq.makeSystemlength.makeSystemlength" title="Permalink to this definition">¶</a></dt>
+<dd><p>Ensures length is divisible by 4 for GE and by 2 for Siemens by padding with zeros if necessary</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>g</strong> (<em>numpy.ndarray</em>) – gradient/RF waveform</p></li>
+<li><p><strong>raster</strong> (<em>float</em>) – gradient/RF raster time</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>g</strong> – Waveform with the proper length</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>numpy.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="module-spiralfmri.Acq.pypulseq.make_balanced">
+<span id="spiralfmri-acq-pypulseq-make-balanced"></span><h2>spiralfmri.Acq.pypulseq.make_balanced<a class="headerlink" href="#module-spiralfmri.Acq.pypulseq.make_balanced" title="Permalink to this headline">¶</a></h2>
+<dl class="py function">
+<dt id="spiralfmri.Acq.pypulseq.make_balanced.make_balanced">
+<code class="sig-prename descclassname">spiralfmri.Acq.pypulseq.make_balanced.</code><code class="sig-name descname">make_balanced</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">g</span></em>, <em class="sig-param"><span class="n">max_grad</span></em>, <em class="sig-param"><span class="n">max_slew</span></em>, <em class="sig-param"><span class="n">system</span></em><span class="sig-paren">)</span><a class="headerlink" href="#spiralfmri.Acq.pypulseq.make_balanced.make_balanced" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds a trapezoid at end of the gradient waveform to make the total area zero.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>g</strong> (<em>numpy.ndarray</em>) – Gradient waveform in Hz/m</p></li>
+<li><p><strong>system</strong> (<em>dict</em>) – System limits and specifications</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>gbal</strong> – Balanced gradient in Hz/m</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>numpy.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="module-spiralfmri.Acq.pypulseq.make_crusher">
+<span id="spiralfmri-acq-pypulseq-make-crusher"></span><h2>spiralfmri.Acq.pypulseq.make_crusher<a class="headerlink" href="#module-spiralfmri.Acq.pypulseq.make_crusher" title="Permalink to this headline">¶</a></h2>
+<dl class="py function">
+<dt id="spiralfmri.Acq.pypulseq.make_crusher.make_crusher">
+<code class="sig-prename descclassname">spiralfmri.Acq.pypulseq.make_crusher.</code><code class="sig-name descname">make_crusher</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">ncycles</span></em>, <em class="sig-param"><span class="n">opslthick</span></em>, <em class="sig-param"><span class="n">gzarea</span></em>, <em class="sig-param"><span class="n">max_grad</span></em>, <em class="sig-param"><span class="n">max_slew</span></em>, <em class="sig-param"><span class="n">sys_lims</span></em><span class="sig-paren">)</span><a class="headerlink" href="#spiralfmri.Acq.pypulseq.make_crusher.make_crusher" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a crusher gradient within the system limits given the number of phase cycles across a thickness</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ncycles</strong> (<em>int</em>) – Number of cycles of phase across slice/slab</p></li>
+<li><p><strong>opslthick</strong> (<em>float</em>) – Slice/slab thickness in meters</p></li>
+<li><p><strong>gzarea</strong> (<em>int</em>) – Half-area of slice-select gradient in mT/m*sec. Default: 0.</p></li>
+<li><p><strong>max_grad</strong> (<em>int</em>) – Max gradient in mT/m</p></li>
+<li><p><strong>max_slew</strong> (<em>float</em>) – Max slew rate  in T/m/s</p></li>
+<li><p><strong>sys_lims</strong> (<em>dict</em>) – System limits</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>gcrush</strong> – Crusher gradient waveform in Hz/m</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>numpy.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="module-spiralfmri.Acq.pypulseq.make_slr_rf">
+<span id="spiralfmri-acq-pypulseq-make-slr-rf"></span><h2>spiralfmri.Acq.pypulseq.make_slr_rf<a class="headerlink" href="#module-spiralfmri.Acq.pypulseq.make_slr_rf" title="Permalink to this headline">¶</a></h2>
+<p>Radio-Frequency SLR pulse generation
+Author: Marina Manso Jimeno
+Last Updated: 04/20/2020</p>
+<dl class="py function">
+<dt id="spiralfmri.Acq.pypulseq.make_slr_rf.JP_ab2rf">
+<code class="sig-prename descclassname">spiralfmri.Acq.pypulseq.make_slr_rf.</code><code class="sig-name descname">JP_ab2rf</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">ac</span></em>, <em class="sig-param"><span class="n">bc</span></em><span class="sig-paren">)</span><a class="headerlink" href="#spiralfmri.Acq.pypulseq.make_slr_rf.JP_ab2rf" title="Permalink to this definition">¶</a></dt>
+<dd><p>Takes two polynomials for alpha and beta, and return an
+rf waveform that would generate them.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ac</strong> (<em>numpy.ndarray</em>) – polynomial for alpha</p></li>
+<li><p><strong>bc</strong> (<em>numpy.ndarray</em>) – polynomial for beta</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>rf2</strong> – rf waveform that produces alpha and beta under the hard pulse approximation</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>numpy.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="spiralfmri.Acq.pypulseq.make_slr_rf.JP_b2a">
+<code class="sig-prename descclassname">spiralfmri.Acq.pypulseq.make_slr_rf.</code><code class="sig-name descname">JP_b2a</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">bc</span></em><span class="sig-paren">)</span><a class="headerlink" href="#spiralfmri.Acq.pypulseq.make_slr_rf.JP_b2a" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function takes a b polynomial, and returns the minimum phase,
+minimum power a polynomial</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>bc</strong> (<em>numpy.ndarray</em>) – Beta polynomial coefficients</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>aca</strong> – Minimum phase alpha polynomial</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>numpy.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="spiralfmri.Acq.pypulseq.make_slr_rf.JP_b2rf">
+<code class="sig-prename descclassname">spiralfmri.Acq.pypulseq.make_slr_rf.</code><code class="sig-name descname">JP_b2rf</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">bc</span></em><span class="sig-paren">)</span><a class="headerlink" href="#spiralfmri.Acq.pypulseq.make_slr_rf.JP_b2rf" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function takes a beta polynomial and returns an RF pulse
+A minimum phase alpha polynomial is intermediately computed,
+followed by the SLR transform.</p>
+<p>Works for complex RF pulses</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>bc</strong> (<em>numpy.ndarray</em>) – beta polynomial coefficients</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>rf</strong> – RF pulse waveform</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>numpy.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="spiralfmri.Acq.pypulseq.make_slr_rf.JP_dinf">
+<code class="sig-prename descclassname">spiralfmri.Acq.pypulseq.make_slr_rf.</code><code class="sig-name descname">JP_dinf</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">d1</span></em>, <em class="sig-param"><span class="n">d2</span></em><span class="sig-paren">)</span><a class="headerlink" href="#spiralfmri.Acq.pypulseq.make_slr_rf.JP_dinf" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates D infinity for a linear phase filter</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>d1</strong> (<em>float</em>) – Pass band ripple</p></li>
+<li><p><strong>d2</strong> (<em>float</em>) – Stop band ripple</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>d</strong> – D infinity for a linear phase filter</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="spiralfmri.Acq.pypulseq.make_slr_rf.JP_dzls">
+<code class="sig-prename descclassname">spiralfmri.Acq.pypulseq.make_slr_rf.</code><code class="sig-name descname">JP_dzls</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">nf</span></em>, <em class="sig-param"><span class="n">tb</span></em>, <em class="sig-param"><span class="n">d1</span></em>, <em class="sig-param"><span class="n">d2</span></em><span class="sig-paren">)</span><a class="headerlink" href="#spiralfmri.Acq.pypulseq.make_slr_rf.JP_dzls" title="Permalink to this definition">¶</a></dt>
+<dd><p>Designs a least squares filter.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>nf</strong> (<em>int</em>) – Filter length</p></li>
+<li><p><strong>tb</strong> (<em>float</em>) – Time-bandwidth</p></li>
+<li><p><strong>d1</strong> (<em>float</em>) – Pass band ripple</p></li>
+<li><p><strong>d2</strong> (<em>float</em>) – Stop band ripple</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>h</strong> – Least squares filter</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>numpy.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="spiralfmri.Acq.pypulseq.make_slr_rf.JP_dzrf">
+<code class="sig-prename descclassname">spiralfmri.Acq.pypulseq.make_slr_rf.</code><code class="sig-name descname">JP_dzrf</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">np</span></em>, <em class="sig-param"><span class="n">tb</span></em>, <em class="sig-param"><span class="n">ptype</span><span class="p">:</span> <span class="n">str</span> <span class="o">=</span> <span class="default_value">'ex'</span></em>, <em class="sig-param"><span class="n">ftype</span><span class="p">:</span> <span class="n">str</span> <span class="o">=</span> <span class="default_value">'ls'</span></em>, <em class="sig-param"><span class="n">d1</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">d2</span><span class="o">=</span><span class="default_value">0</span></em><span class="sig-paren">)</span><a class="headerlink" href="#spiralfmri.Acq.pypulseq.make_slr_rf.JP_dzrf" title="Permalink to this definition">¶</a></dt>
+<dd><p>Designs an rf pulse</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>np</strong> (<em>integer</em>) – Number of points</p></li>
+<li><p><strong>tb</strong> – Time-bandwidth product</p></li>
+<li><p><strong>ptype</strong> (<em>string</em><em>, </em><em>optional</em>) – Pulse type (ex = pi/2 excitation pulse)</p></li>
+<li><p><strong>ftype</strong> (<em>string</em><em>, </em><em>optional</em>) – Filter design method (ls = least squares)</p></li>
+<li><p><strong>d1</strong> (<em>integer</em><em>, </em><em>optional</em>) – Passband ripple. Default is 0.</p></li>
+<li><p><strong>d2</strong> (<em>integer</em><em>, </em><em>optional</em>) – Stopband ripple. Default is 0.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>rf</strong> – rf waveform</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>numpy.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="spiralfmri.Acq.pypulseq.make_slr_rf.JP_mag2mp">
+<code class="sig-prename descclassname">spiralfmri.Acq.pypulseq.make_slr_rf.</code><code class="sig-name descname">JP_mag2mp</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">x</span></em><span class="sig-paren">)</span><a class="headerlink" href="#spiralfmri.Acq.pypulseq.make_slr_rf.JP_mag2mp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Take the magnitude of the fft of a signal, and return the
+fft of the analytic signal.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>x</strong> (<em>numpy.ndarray</em>) – magnitude of analytic signal fft</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>a</strong> – fft of analytic signal</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>numpy.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="spiralfmri.Acq.pypulseq.make_slr_rf.make_slr_rf">
+<code class="sig-prename descclassname">spiralfmri.Acq.pypulseq.make_slr_rf.</code><code class="sig-name descname">make_slr_rf</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">flip_angle</span><span class="p">:</span> <span class="n">float</span></em>, <em class="sig-param"><span class="n">slice_thickness</span><span class="p">:</span> <span class="n">float</span></em>, <em class="sig-param"><span class="n">time_bw_product</span><span class="p">:</span> <span class="n">float</span></em>, <em class="sig-param"><span class="n">duration</span><span class="p">:</span> <span class="n">float</span></em>, <em class="sig-param"><span class="n">ncycles</span><span class="p">:</span> <span class="n">int</span></em>, <em class="sig-param"><span class="n">system</span><span class="p">:</span> <span class="n">dict</span></em><span class="sig-paren">)</span><a class="headerlink" href="#spiralfmri.Acq.pypulseq.make_slr_rf.make_slr_rf" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a slice-selective SLR pulse with gradient crusher (or balancing blip) before it.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>flip_angle</strong> (<em>float</em>) – Flip angle in degrees.</p></li>
+<li><p><strong>slice_thickness</strong> (<em>float</em>) – Slab thickness in millimeters (mm) of accompanying slice select trapezoidal event. The slice thickness determines the area of the
+slice select event.</p></li>
+<li><p><strong>time_bw_product</strong> (<em>float</em>) – Time-bandwidth product of SLR pulse</p></li>
+<li><p><strong>duration</strong> (<em>float</em>) – Duration in seconds (s).</p></li>
+<li><p><strong>ncycles</strong> (<em>int</em>) – number of cycles of phase (spoiler) (0 = balanced)</p></li>
+<li><p><strong>system</strong> (<em>dict</em>) – System limits. Default is a system limits object initialised to default values.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>rf</strong> (<em>SimpleNamespace</em>) – Radio-frequency slr pulse event.</p></li>
+<li><p><strong>gz</strong> (<em>SimpleNamespace, optional</em>) – Accompanying slice select trapezoidal gradient event. Returned only if <cite>slice_thickness</cite> is not zero.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="module-spiralfmri.Acq.pypulseq.trapwave2">
+<span id="spiralfmri-acq-pypulseq-trapwave2"></span><h2>spiralfmri.Acq.pypulseq.trapwave2<a class="headerlink" href="#module-spiralfmri.Acq.pypulseq.trapwave2" title="Permalink to this headline">¶</a></h2>
+<dl class="py function">
+<dt id="spiralfmri.Acq.pypulseq.trapwave2.hflip">
+<code class="sig-prename descclassname">spiralfmri.Acq.pypulseq.trapwave2.</code><code class="sig-name descname">hflip</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">arr</span></em>, <em class="sig-param"><span class="n">cp</span><span class="o">=</span><span class="default_value">0</span></em><span class="sig-paren">)</span><a class="headerlink" href="#spiralfmri.Acq.pypulseq.trapwave2.hflip" title="Permalink to this definition">¶</a></dt>
+<dd><p>Flips the ramp of a trapezoidal gradient</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>arr</strong> (<em>numpy.ndarray</em>) – array</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>newarr</strong> – flipped array</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>numpy.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="spiralfmri.Acq.pypulseq.trapwave2.trapwave2">
+<code class="sig-prename descclassname">spiralfmri.Acq.pypulseq.trapwave2.</code><code class="sig-name descname">trapwave2</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">area</span></em>, <em class="sig-param"><span class="n">mxg</span></em>, <em class="sig-param"><span class="n">mxs</span></em>, <em class="sig-param"><span class="n">rasterTime</span></em><span class="sig-paren">)</span><a class="headerlink" href="#spiralfmri.Acq.pypulseq.trapwave2.trapwave2" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create gradient trapezoid with given area.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>area</strong> (<em>float</em>) – Area in mT/m*sec</p></li>
+<li><p><strong>mxg</strong> (<em>int</em>) – Maximum gradient limit in mT/m</p></li>
+<li><p><strong>mxs</strong> (<em>int</em>) – Maximum slew rate limit  in T/m/s</p></li>
+<li><p><strong>rasterTime</strong> (<em>float</em>) – Gradient raster time in seconds</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>waveform</strong> – Trapezoidal gradient waveform in mT/m</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>numpy.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Pypulseq version</a><ul>
+<li><a class="reference internal" href="#module-spiralfmri.Acq.pypulseq.archimedian">spiralfmri.Acq.pypulseq.archimedian</a></li>
+<li><a class="reference internal" href="#module-spiralfmri.Acq.pypulseq.g2k">spiralfmri.Acq.pypulseq.g2k</a></li>
+<li><a class="reference internal" href="#module-spiralfmri.Acq.pypulseq.getparams">spiralfmri.Acq.pypulseq.getparams</a></li>
+<li><a class="reference internal" href="#module-spiralfmri.Acq.pypulseq.interpolation">spiralfmri.Acq.pypulseq.interpolation</a></li>
+<li><a class="reference internal" href="#module-spiralfmri.Acq.pypulseq.makeSystemlength">spiralfmri.Acq.pypulseq.makeSystemlength</a></li>
+<li><a class="reference internal" href="#module-spiralfmri.Acq.pypulseq.make_balanced">spiralfmri.Acq.pypulseq.make_balanced</a></li>
+<li><a class="reference internal" href="#module-spiralfmri.Acq.pypulseq.make_crusher">spiralfmri.Acq.pypulseq.make_crusher</a></li>
+<li><a class="reference internal" href="#module-spiralfmri.Acq.pypulseq.make_slr_rf">spiralfmri.Acq.pypulseq.make_slr_rf</a></li>
+<li><a class="reference internal" href="#module-spiralfmri.Acq.pypulseq.trapwave2">spiralfmri.Acq.pypulseq.trapwave2</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="spiralfmri.Acq.html"
+                        title="previous chapter">Acquisition</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="spiralfmri.Recon.html"
+                        title="next chapter">Reconstruction</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/spiralfmri.Acq.pypulseq.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="spiralfmri.Recon.html" title="Reconstruction"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="spiralfmri.Acq.html" title="Acquisition"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">spiral-fmri  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="modules.html" >Modules</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="spiralfmri.html" >Spiral fMRI package</a> &#187;</li>
+          <li class="nav-item nav-item-3"><a href="spiralfmri.Acq.html" >Acquisition</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2020, Columbia University.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 3.0.3.
+    </div>
+  </body>
+</html>

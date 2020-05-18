@@ -1,0 +1,9 @@
+Spiral fMRI package
+===================
+
+.. toctree::
+   :maxdepth: 4
+
+   spiralfmri.Acq
+   spiralfmri.Recon
+

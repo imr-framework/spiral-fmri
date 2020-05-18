@@ -1,0 +1,9 @@
+Acquisition
+===========
+.. toctree::
+   :maxdepth: 4
+
+   spiralfmri.Acq.pypulseq
+   
+
+

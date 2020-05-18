@@ -1,0 +1,76 @@
+Pypulseq version
+================
+Methods to create a sequence file usign pypulseq
+
+spiralfmri.Acq.pypulseq.archimedian
+-----------------------------------
+
+.. automodule:: spiralfmri.Acq.pypulseq.archimedian
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+spiralfmri.Acq.pypulseq.g2k 
+---------------------------
+
+.. automodule:: spiralfmri.Acq.pypulseq.g2k
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+spiralfmri.Acq.pypulseq.getparams
+---------------------------------
+
+.. automodule:: spiralfmri.Acq.pypulseq.getparams
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+spiralfmri.Acq.pypulseq.interpolation
+-------------------------------------
+
+.. automodule:: spiralfmri.Acq.pypulseq.interpolation
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+spiralfmri.Acq.pypulseq.makeSystemlength
+----------------------------------------
+
+.. automodule:: spiralfmri.Acq.pypulseq.makeSystemlength
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+spiralfmri.Acq.pypulseq.make\_balanced
+--------------------------------------
+
+.. automodule:: spiralfmri.Acq.pypulseq.make_balanced
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+spiralfmri.Acq.pypulseq.make\_crusher
+-------------------------------------
+
+.. automodule:: spiralfmri.Acq.pypulseq.make_crusher
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+spiralfmri.Acq.pypulseq.make\_slr\_rf
+-------------------------------------
+
+.. automodule:: spiralfmri.Acq.pypulseq.make_slr_rf
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+spiralfmri.Acq.pypulseq.trapwave2 
+---------------------------------
+
+.. automodule:: spiralfmri.Acq.pypulseq.trapwave2
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
