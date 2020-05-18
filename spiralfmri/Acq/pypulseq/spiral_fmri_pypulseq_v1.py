@@ -12,18 +12,18 @@ from pypulseq.make_adc import make_adc
 from pypulseq.make_arbitrary_rf import make_arbitrary_rf
 from pypulseq.make_arbitrary_grad import make_arbitrary_grad
 
-# Import own methods
-from Acq.getparams import getparams
-from Acq.g2k import g2k
-from Acq.genspivd2 import genspiralvd
-from Acq.interpolation import grad_interpolate
-from Acq.interpolation import rf_interpolate
-from Acq.archimedian import archimedian_spiral
-from Acq.make_slr_rf import make_slr_rf
-from Acq.makeSystemlength import makeSystemlength
-from Acq.make_balanced import make_balanced
-from Acq.make_crusher import make_crusher
-from Acq.trapwave2 import trapwave2
+# Import own method
+from spiralfmri.Acq.pypulseq.getparams import getparams
+from spiralfmri.Acq.pypulseq.g2k import g2k
+from spiralfmri.Acq.pypulseq.genspivd2 import genspiralvd
+from spiralfmri.Acq.pypulseq.interpolation import grad_interpolate
+from spiralfmri.Acq.pypulseq.interpolation import rf_interpolate
+from spiralfmri.Acq.pypulseq.archimedian import archimedian_spiral
+from spiralfmri.Acq.pypulseq.make_slr_rf import make_slr_rf
+from spiralfmri.Acq.pypulseq.makeSystemlength import makeSystemlength
+from spiralfmri.Acq.pypulseq.make_balanced import make_balanced
+from spiralfmri.Acq.pypulseq.make_crusher import make_crusher
+from spiralfmri.Acq.pypulseq.trapwave2 import trapwave2
 
 # Other imports
 from math import sqrt, pi

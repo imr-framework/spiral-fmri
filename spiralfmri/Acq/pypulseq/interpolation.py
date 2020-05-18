@@ -4,7 +4,7 @@ Last Updated: 05/06/2020
 """
 import numpy as np
 
-from makeSystemlength import makeSystemlength
+from spiralfmri.Acq.pypulseq.makeSystemlength import makeSystemlength
 
 def rf_interpolate(rf_signal, rf_raster_time=1e-6):
     '''
@@ -19,7 +19,8 @@ def rf_interpolate(rf_signal, rf_raster_time=1e-6):
 
     Returns
     -------
-    Interpolated RF waveform with new raster time
+    rf_out :  numpy.ndarray
+        Interpolated RF waveform with new raster time
     '''
     if rf_raster_time <= 0:
         raise ValueError('Raster time has to be larger than 0')
@@ -47,7 +48,8 @@ def grad_interpolate(grad_signal, grad_raster_time=10e-6):
 
     Returns
     -------
-    Interpolated gradient waveform with new raster time
+    grad_out : numpy.ndarray
+        Interpolated gradient waveform with new raster time
     '''
     if grad_raster_time <= 0:
         raise ValueError('Raster time has to be larger than 0')

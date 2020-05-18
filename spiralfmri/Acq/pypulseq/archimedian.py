@@ -3,13 +3,12 @@ import numpy as np
 import math
 
 def archimedian_spiral(smax, gmax, T, N, FOV, rmax):
-    '''
-    Creates a variable density spiral waveform with trajectory
+    """Creates a variable density spiral waveform with trajectory
     k(t) = r(t) exp(i*q(t))
     Where q is the same as theta, r and q are chosen to satisfy:
     1) Maximum gradient amplitudes and slew rates.
     2) Maximum gradient due to FOV, where FOV can vary with k-space radius r, as
-        FOV(r) = F0 + F1*r + F2*r*r
+    FOV(r) = F0 + F1*r + F2*r*r
 
     Parameters
     ----------
@@ -33,7 +32,7 @@ def archimedian_spiral(smax, gmax, T, N, FOV, rmax):
     g : numpy.ndarray
         Gradient waveform (Gx + iGy) in Hz/m
 
-    '''
+    """
 
     if N < 1:
         raise ValueError('Number of shots has to be at least 1')

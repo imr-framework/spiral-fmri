@@ -21,7 +21,7 @@ def trapwave2(area, mxg, mxs, rasterTime):
     Returns
     -------
     waveform : numpy.ndarray
-    Trapezoidal gradient waveform in mT/m
+        Trapezoidal gradient waveform in mT/m
     '''
     # area = area*1e3
     # Do all calculations as positive then flip at end if negative

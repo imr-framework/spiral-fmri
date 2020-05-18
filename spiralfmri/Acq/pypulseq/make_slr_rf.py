@@ -15,8 +15,8 @@ from scipy.signal import resample_poly
 
 from pypulseq.opts import Opts
 
-from makeSystemlength import makeSystemlength
-from trapwave2 import trapwave2
+from spiralfmri.Acq.pypulseq.makeSystemlength import makeSystemlength
+from spiralfmri.Acq.pypulseq.trapwave2 import trapwave2
 
 def make_slr_rf(flip_angle: float, slice_thickness: float, time_bw_product: float, duration: float, ncycles: int,
                     system: dict):
@@ -217,8 +217,8 @@ def JP_dinf(d1,d2):
     '''
     Calculates D infinity for a linear phase filter
     
-   Parameters
-   ----------
+    Parameters
+    ----------
     d1 : float
         Pass band ripple
     d2 : float
