@@ -3,7 +3,7 @@
 """
 PRESTO stack of spirals pypulseq version
 Author: Marina Manso Jimeno
-Last Updated: 05/07/2020
+Last Updated: 06/11/2020
 """
 # Import Pypulseq methods
 from pypulseq.opts import Opts
@@ -12,24 +12,23 @@ from pypulseq.make_adc import make_adc
 from pypulseq.make_arbitrary_rf import make_arbitrary_rf
 from pypulseq.make_arbitrary_grad import make_arbitrary_grad
 
-# Import own method
+# Import own methods
 from spiralfmri.Acq.pypulseq.getparams import getparams
-from spiralfmri.Acq.pypulseq.g2k import g2k
-from spiralfmri.Acq.pypulseq.genspivd2 import genspiralvd
-from spiralfmri.Acq.pypulseq.interpolation import grad_interpolate
-from spiralfmri.Acq.pypulseq.interpolation import rf_interpolate
-from spiralfmri.Acq.pypulseq.archimedian import archimedian_spiral
-from spiralfmri.Acq.pypulseq.make_slr_rf import make_slr_rf
-from spiralfmri.Acq.pypulseq.makeSystemlength import makeSystemlength
-from spiralfmri.Acq.pypulseq.make_balanced import make_balanced
-from spiralfmri.Acq.pypulseq.make_crusher import make_crusher
-from spiralfmri.Acq.pypulseq.trapwave2 import trapwave2
+from spiralfmri.Acq.pypulseq.utils.g2k import g2k
+from spiralfmri.Acq.pypulseq.utils.interpolation import grad_interpolate, rf_interpolate
+from spiralfmri.Acq.pypulseq.utils.archimedian import archimedian_spiral
+from spiralfmri.Acq.pypulseq.utils.make_slr_rf import make_slr_rf
+from spiralfmri.Acq.pypulseq.utils.makeSystemlength import makeSystemlength
+from spiralfmri.Acq.pypulseq.utils.make_balanced import make_balanced
+from spiralfmri.Acq.pypulseq.utils.make_crusher import make_crusher
+from spiralfmri.Acq.pypulseq.utils.trapwave2 import trapwave2
 
 # Other imports
 from math import sqrt, pi
 from cmath import exp as cexp
 import numpy as np
 import scipy.io as sio
+import configparser
 import matplotlib.pyplot as plt
 
 
@@ -200,8 +199,15 @@ seq.plot(time_range=(0,0.019))
 ###
 # 5. Write the .seq file
 ###
-seq.write('spiral_' + fmri['type'] + '.seq')
-sio.savemat('ktraj.mat', {'ktraj_full': ktraj_full})
+path_settings = '../../settings.ini'
+config = configparser.ConfigParser()
+config.read(path_settings)
+config_data = config['ACQ']
+seq.write(config_data['path_seq_save'] +'spiral_' + fmri['type'] + '.seq')
+
+ktraj = np.stack(ktraj_full)
+ktraj = np.moveaxis(ktraj, [-1, 0], [0, 2])
+np.save(config_data['path_ktraj_save'] + 'ktraj.npy', ktraj)
 
 
 
