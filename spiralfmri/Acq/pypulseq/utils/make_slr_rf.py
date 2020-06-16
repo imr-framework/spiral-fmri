@@ -15,8 +15,8 @@ from scipy.signal import resample_poly
 
 from pypulseq.opts import Opts
 
-from spiralfmri.Acq.pypulseq.makeSystemlength import makeSystemlength
-from spiralfmri.Acq.pypulseq.trapwave2 import trapwave2
+from spiralfmri.Acq.pypulseq.utils.makeSystemlength import makeSystemlength
+from spiralfmri.Acq.pypulseq.utils.trapwave2 import trapwave2
 
 def make_slr_rf(flip_angle: float, slice_thickness: float, time_bw_product: float, duration: float, ncycles: int,
                     system: dict):

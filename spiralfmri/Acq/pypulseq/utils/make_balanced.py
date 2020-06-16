@@ -1,6 +1,6 @@
 import numpy as np
 
-from spiralfmri.Acq.pypulseq.trapwave2 import trapwave2
+from spiralfmri.Acq.pypulseq.utils.trapwave2 import trapwave2
 
 def make_balanced(g, max_grad, max_slew, system):
     '''

@@ -12,13 +12,13 @@ import scipy.io as sio
 import math
 import matplotlib.pyplot as plt
 
-from spiralfmri.Acq.pypulseq.make_slr_rf import make_slr_rf
-from spiralfmri.Acq.pypulseq.trapwave2 import trapwave2
-from spiralfmri.Acq.pypulseq.make_crusher import make_crusher
-from spiralfmri.Acq.pypulseq.makeSystemlength import makeSystemlength
-from spiralfmri.Acq.pypulseq.interpolation import rf_interpolate, grad_interpolate
-from spiralfmri.Acq.pypulseq.archimedian import archimedian_spiral
-from spiralfmri.Acq.pypulseq.make_balanced import make_balanced
+from spiralfmri.Acq.pypulseq.utils.make_slr_rf import make_slr_rf
+from spiralfmri.Acq.pypulseq.utils.trapwave2 import trapwave2
+from spiralfmri.Acq.pypulseq.utils.make_crusher import make_crusher
+from spiralfmri.Acq.pypulseq.utils.makeSystemlength import makeSystemlength
+from spiralfmri.Acq.pypulseq.utils.interpolation import rf_interpolate, grad_interpolate
+from spiralfmri.Acq.pypulseq.utils.archimedian import archimedian_spiral
+from spiralfmri.Acq.pypulseq.utils.make_balanced import make_balanced
 
 from pypulseq.opts import Opts
 
@@ -189,7 +189,7 @@ class testInterpolation(unittest.TestCase):
 class testArchimedianSpiral(unittest.TestCase):
     def test_rmax(self):
         rmax_in = 150.0
-        k, _ = archimedian_spiral(smax=system['max_slew'],gmax=system['max_grad'],T=system['grad_raster_time'],N=3,FOV=0.24,rmax=rmax_in)
+        k, _ = archimedian_spiral(smax=system['max_slew'],gmax=system['max_grad'],T=system['grad_raster_time'],N=3,FOV=0.24, rmax=rmax_in)
         self.assertLess(np.real(k.max()), rmax_in)
 
     def test_max_grad(self):

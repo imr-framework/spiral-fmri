@@ -1,5 +1,5 @@
-from spiralfmri.Acq.pypulseq.trapwave2 import trapwave2
-from spiralfmri.Acq.pypulseq.makeSystemlength import makeSystemlength
+from spiralfmri.Acq.pypulseq.utils.trapwave2 import trapwave2
+from spiralfmri.Acq.pypulseq.utils.makeSystemlength import makeSystemlength
 
 import numpy as np
 

@@ -4,7 +4,7 @@ Last Updated: 05/06/2020
 """
 import numpy as np
 
-from spiralfmri.Acq.pypulseq.makeSystemlength import makeSystemlength
+from spiralfmri.Acq.pypulseq.utils.makeSystemlength import makeSystemlength
 
 def rf_interpolate(rf_signal, rf_raster_time=1e-6):
     '''
