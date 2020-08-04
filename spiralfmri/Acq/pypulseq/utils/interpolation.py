@@ -56,8 +56,8 @@ def grad_interpolate(grad_signal, grad_raster_time=10e-6):
 
     GE_grad_raster_time = 4e-6
     T = len(grad_signal) * GE_grad_raster_time  # pulse duration
-    t_GE = np.linspace(0, T - GE_grad_raster_time, T / GE_grad_raster_time)
-    t_out = np.linspace(0, T - grad_raster_time, T / grad_raster_time)
+    t_GE = np.linspace(0, T - GE_grad_raster_time, int(T / GE_grad_raster_time))
+    t_out = np.linspace(0, T - grad_raster_time, int(T / grad_raster_time))
     grad_out = np.interp(t_out, t_GE, grad_signal.flatten())
     grad_out = makeSystemlength(grad_out, grad_raster_time)
 
