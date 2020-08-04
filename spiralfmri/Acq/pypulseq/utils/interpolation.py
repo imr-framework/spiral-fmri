@@ -27,8 +27,8 @@ def rf_interpolate(rf_signal, rf_raster_time=1e-6):
 
     GE_rf_raster_time = 4e-6
     T = len(rf_signal) * GE_rf_raster_time  # pulse duration
-    t_GE = np.linspace(0, T - GE_rf_raster_time, T / GE_rf_raster_time)
-    t_out = np.linspace(0, T - rf_raster_time, T / rf_raster_time)
+    t_GE = np.linspace(0, T - GE_rf_raster_time, int(T / GE_rf_raster_time))
+    t_out = np.linspace(0, T - rf_raster_time, int(T / rf_raster_time))
     rf_out = np.interp(t_out, t_GE, rf_signal.flatten())
     rf_out = makeSystemlength(rf_out, rf_raster_time)
 
