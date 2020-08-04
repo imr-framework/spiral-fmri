@@ -23,7 +23,7 @@ def getparams():
         raise ValueError('Please do not modify Siemens gradient maximum value or units.')
     if sysSiemens['max_slew'] != 130 or sysSiemens['slew_unit'] != 'T/m/s':
         raise ValueError('Please do not modify Siemens slew rate maximum value or units.')
-    if sysSiemens['grad_raster_time'] != 10e-6 or sysSiemens['rf_raster_time'] != 10e-6:
+    if sysSiemens['grad_raster_time'] != 10e-6 or sysSiemens['rf_raster_time'] != 1e-6:
         raise ValueError('Please do not modify Siemens gradient/rf raster times.')
     if sysGE['max_grad'] != 31 or sysSiemens['grad_unit'] != 'mT/m':
         raise ValueError('Please do not modify GE gradient maximum value or units.')
