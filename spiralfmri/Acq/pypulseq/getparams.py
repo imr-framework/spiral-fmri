@@ -14,7 +14,7 @@ def getparams():
     # system limits
     gamma = 42576000 # Hz/T
     sysSiemens = {'gamma': gamma, 'max_grad': 32, 'grad_unit': 'mT/m', 'max_slew': 130, 'slew_unit': 'T/m/s',
-                 'grad_raster_time': 10e-6, 'rf_raster_time': 10e-6}
+                 'grad_raster_time': 10e-6, 'rf_raster_time': 1e-6}
     #TODO: Try having maximum grad as 32 for GE
     sysGE = {'gamma': gamma, 'max_grad': 31, 'grad_unit': 'mT/m', 'max_slew': 130, 'slew_unit': 'T/m/s', 'grad_raster_time': 4e-6, 'rf_raster_time': 4e-6 }
 
